@@ -1,0 +1,242 @@
+/* register.css - Estilos específicos para a página de registro */
+body {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Gradiente similar ao tema de auth: duas camadas radiais sobre base preta */
+  background:
+    radial-gradient(1200px 600px at 20% -10%, rgba(0,212,255,0.12), transparent 60%),
+    radial-gradient(900px 500px at 120% 110%, rgba(58,12,163,0.18), transparent 60%),
+    #000000;
+  margin: 0;
+  padding: 20px;
+  font-family: 'Poppins', sans-serif;
+}
+
+.auth-page-wrap {
+  position: relative;
+  padding: 24px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-container {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.14);
+  backdrop-filter: blur(14px);
+  border-radius: 28px;
+  box-shadow: 0 24px 70px rgba(0,0,0,0.45);
+  width: 440px;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.auth-header {
+  background: transparent;
+  padding: 34px 22px 18px;
+  text-align: center;
+  position: relative;
+}
+
+.auth-avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  margin: 0 auto 12px;
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.3), rgba(255,255,255,0.06));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255,255,255,0.9);
+  border: 1px solid rgba(255,255,255,0.18);
+  box-shadow: inset 0 8px 22px rgba(255,255,255,0.08), 0 8px 24px rgba(0,0,0,0.25);
+}
+
+.auth-avatar i {
+  font-size: 2rem;
+}
+
+.auth-header h2 {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.auth-subtitle {
+  margin: 8px 0 0;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #cbd6ff;
+  opacity: 0.9;
+}
+
+.auth-content {
+  padding: 24px;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+  color: #dfe7ff;
+}
+
+.input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-wrap input {
+  width: 100%;
+  padding: 13px 42px 13px 42px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(255,255,255,0.5);
+  color: #fff;
+  border-radius: 0;
+  font-size: 0.98rem;
+  transition: all 0.3s ease;
+}
+
+.input-wrap input:focus {
+  outline: none;
+  border-bottom-color: #9ecbff;
+  box-shadow: 0 2px 0 rgba(158, 203, 255, 0.3);
+}
+
+.input-wrap input::placeholder {
+  color: rgba(255,255,255,0.6);
+}
+
+.input-icon {
+  position: absolute;
+  left: 12px;
+  color: rgba(255,255,255,0.9);
+  pointer-events: none;
+}
+
+.toggle-pass {
+  position: absolute;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.toggle-pass:hover {
+  background: rgba(255,255,255,0.18);
+}
+
+.form-options {
+  margin-bottom: 18px;
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #dfe7ff;
+}
+
+.checkbox a {
+  color: #9ecbff;
+  text-decoration: none;
+}
+
+.checkbox a:hover {
+  text-decoration: underline;
+}
+
+.btn {
+  padding: 13px;
+  font-size: 0.97rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.btn-full {
+  width: 100%;
+  background: linear-gradient(135deg, #00d4ff, #3a0ca3);
+  color: #fff;
+  box-shadow: 0 12px 28px rgba(0,212,255,0.25);
+}
+
+.btn-full:hover {
+  box-shadow: 0 16px 36px rgba(0,212,255,0.32);
+  transform: translateY(-2px);
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.3);
+  color: #fff;
+}
+
+.btn-outline:hover {
+  background: rgba(255,255,255,0.1);
+}
+
+/* Inline small link style for register page (matches auth page) */
+.signup-inline { font-size: 0.92rem; color: #ffffff; }
+.signup-inline-link { margin-left: 8px; color: #2b6fd6; text-decoration: underline; font-weight: 600; }
+.signup-inline-link:hover { color: #1a4fb0; }
+
+/* Responsividade */
+@media (max-width: 600px) {
+  .auth-container {
+    width: 100%;
+  }
+  
+  .auth-content {
+    padding: 18px;
+  }
+  
+  body {
+    padding: 10px;
+  }
+}
+
+/* Fix: Make CTAs visible instantly on the dedicated register page (disable global .btn entrance animation) */
+body.auth-glass .btn,
+.auth-page-wrap .btn {
+  opacity: 1 !important;
+  animation: none !important;
+  transform: none !important;
+}
+
+/* Ensure the state select shows black text and that option items are readable */
+#registerState,
+#registerState option {
+  color: #000;
+  background: #fff;
+}
+
+/* Make the UF (flag) icon black for the state selector for better contrast */
+/* flag icon removed from markup; no specific styles needed here */

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Perfil - SmartSolar</title>
+  <link rel="shortcut icon" href="src/images/unnamed.png" type="image/x-icon">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="src/styles/profile.css">
+</head>
+<body>
+  <header class="profile-header-top">
+    <a href="dashboard.html" class="back-link"><i class="fas fa-chevron-left"></i> Voltar</a>
+    <h1>Meu Perfil</h1>
+  </header>
+
+  <main class="profile-main">
+    <section class="profile-card view" id="profileView">
+      <div class="avatar">
+        <div class="avatar-frame">
+          <img id="profileImage" src="https://ui-avatars.com/api/?name=Usuario&background=00d4ff&color=fff" alt="Avatar">
+          <button class="avatar-edit-btn" title="Alterar foto" aria-label="Alterar foto"><i class="fas fa-camera"></i></button>
+        </div>
+      </div>
+      <div class="info">
+        <h2 id="pvName">Usuário</h2>
+        <p class="muted" id="pvEmail">user@example.com</p>
+        <div class="quick-actions">
+          <button id="goEdit" class="btn btn-primary small">Editar Perfil <i class="fas fa-edit"></i></button>
+          <button id="changePasswordQuick" class="btn btn-outline small">Alterar senha</button>
+        </div>
+        <div class="details">
+          <div class="detail-row" data-field="cpf"><strong>CPF</strong><span id="pvCpf">-</span><button class="field-edit" title="Editar CPF"><i class="fas fa-pen"></i></button></div>
+          <div class="detail-row" data-field="phone"><strong>Telefone</strong><span id="pvPhone">-</span><button class="field-edit" title="Editar Telefone"><i class="fas fa-pen"></i></button></div>
+          <div class="detail-row" data-field="city"><strong>Cidade</strong><span id="pvCity">-</span><button class="field-edit" title="Editar Cidade"><i class="fas fa-pen"></i></button></div>
+          <div class="detail-row" data-field="state"><strong>Estado</strong><span id="pvState">-</span><button class="field-edit" title="Editar Estado"><i class="fas fa-pen"></i></button></div>
+          <div class="detail-row"><strong>Último acesso</strong><span id="pvLastAccess">-</span></div>
+        </div>
+        
+      </div>
+    </section>
+
+    <section class="profile-card edit hidden" id="profileEdit">
+      <form id="profileForm">
+        <div class="form-row avatar-row">
+          <label for="inputProfileImg">Foto de Perfil</label>
+          <div class="avatar-edit">
+            <div class="avatar-frame">
+              <img id="previewImg" src="https://ui-avatars.com/api/?name=Usuario&background=00d4ff&color=fff" alt="Preview">
+              <button class="avatar-edit-btn" title="Alterar foto" aria-label="Alterar foto"><i class="fas fa-camera"></i></button>
+              <input type="file" id="inputProfileImg" accept="image/*" style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:10;">
+            </div>
+          </div>
+        </div>
+        <div class="form-row">
+          <label for="inputName">Nome</label>
+          <input id="inputName" type="text" placeholder="Seu nome" required>
+        </div>
+        <div class="form-row">
+          <label for="inputEmail">Email</label>
+          <input id="inputEmail" type="email" placeholder="seu@email.com" required>
+        </div>
+        <div class="form-row">
+          <label for="inputCpf">CPF</label>
+          <input id="inputCpf" type="text" placeholder="00000000000">
+        </div>
+        <div class="form-row">
+          <label for="inputPhone">Telefone</label>
+          <input id="inputPhone" type="tel" placeholder="(99) 9 9999-9999">
+        </div>
+        <div class="form-row small">
+          <div class="col">
+            <label for="inputCity">Cidade</label>
+            <input id="inputCity" type="text" placeholder="Cidade">
+          </div>
+          <div class="col">
+            <label for="inputState">Estado (UF)</label>
+            <select id="inputState">
+              <option value=""></option>
+              <option>SP</option>
+              <option>RJ</option>
+              <option>MG</option>
+              <option>ES</option>
+              <option>BA</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">Salvar alterações</button>
+          <button type="button" id="cancelEditBtn" class="btn btn-outline">Cancelar</button>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <div id="profileToast" class="profile-toast hidden"></div>
+
+  <!-- Change Password Modal -->
+  <div id="changePasswordModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-card password-modal">
+      <div class="modal-header">
+        <div class="modal-icon">
+          <i class="fas fa-lock"></i>
+        </div>
+        <h3>Alterar senha</h3>
+        <p class="modal-subtitle">Defina uma nova senha segura para sua conta</p>
+      </div>
+      <form id="changePasswordForm" class="password-form">
+        <div class="form-group">
+          <label for="oldPassword"><i class="fas fa-key"></i> Senha antiga</label>
+          <div class="input-wrapper">
+            <input id="oldPassword" type="password" placeholder="Digite sua senha atual" required autocomplete="current-password">
+            <button type="button" class="toggle-password" data-target="oldPassword" tabindex="-1"><i class="fas fa-eye"></i></button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="newPassword"><i class="fas fa-lock"></i> Nova senha</label>
+          <div class="input-wrapper">
+            <input id="newPassword" type="password" placeholder="Digite a nova senha" required autocomplete="new-password">
+            <button type="button" class="toggle-password" data-target="newPassword" tabindex="-1"><i class="fas fa-eye"></i></button>
+          </div>
+          <small class="hint">Mínimo de 6 caracteres</small>
+        </div>
+        <div class="form-group">
+          <label for="confirmNewPassword"><i class="fas fa-check-circle"></i> Confirmar nova senha</label>
+          <div class="input-wrapper">
+            <input id="confirmNewPassword" type="password" placeholder="Confirme a nova senha" required autocomplete="new-password">
+            <button type="button" class="toggle-password" data-target="confirmNewPassword" tabindex="-1"><i class="fas fa-eye"></i></button>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" id="cancelChangePwd" class="btn btn-outline"><i class="fas fa-times"></i> Cancelar</button>
+          <button type="submit" class="btn btn-primary"><i class="fas fa-check"></i> Salvar senha</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+<script defer src="src/scripts/api-base.js"></script>
+<script defer src="src/scripts/remote.js"></script>
+<script defer src="src/scripts/profile.js"></script>
+</body>
+</html>

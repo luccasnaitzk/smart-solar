@@ -1,0 +1,223 @@
+/* =========================================================
+  INSTALACAO-SUPORTE.CSS - VISUAL APRIMORADO
+  Alinhado com tokens do styles.css (radius, shadows, gradients)
+  ========================================================= */
+
+/* NOTA: Os estilos de body, fontes e variáveis de cor são 
+  automaticamente herdados do seu arquivo principal styles.css.
+  Não é necessário declará-los novamente aqui.
+*/
+
+/* 1) HERO (cabeçalho da página) */
+.support-hero {
+  padding: 80px 24px;
+  text-align: center;
+  max-width: 1200px;
+  margin: 110px auto 80px;
+  border-radius: var(--radius-xl);
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow-xl);
+  border: 1px solid rgba(255,255,255,0.3);
+}
+  
+.support-hero-content h1 {
+  font-size: clamp(2.5rem, 6vw, 3.5rem);
+  font-weight: 800;
+  margin: 0 0 20px;
+  line-height: 1.2;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+  
+.support-hero-content p {
+  font-size: 1.15rem;
+  color: var(--text-light);
+  max-width: 780px;
+  margin: 0 auto;
+  line-height: 1.8;
+}
+  
+/* 2) DETALHES (linha do tempo) */
+.support-details {
+  padding: 0 20px;
+}
+  
+/* Usar o container existente no HTML como trilho da timeline */
+.support-details .container,
+.timeline-container {
+  max-width: 980px;
+  margin: 0 auto;
+  position: relative;
+}
+  
+  /* Linha vertical da linha do tempo */
+/* Linha central da timeline (funciona para .container e .timeline-container) */
+.support-details .container::before,
+.timeline-container::before {
+  content: '';
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: calc(100% - 40px);
+  background: linear-gradient(180deg, rgba(0,212,170,0.25), rgba(108,92,231,0.25));
+  border-radius: 3px;
+  box-shadow: 0 0 16px rgba(0, 212, 170, 0.15);
+}
+  
+.process-step {
+  display: flex;
+  position: relative;
+  margin-bottom: 50px;
+  width: 50%;
+  opacity: 0; /* Animação de entrada */
+  transform: translateY(30px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+/* Preparar animação com leve deslocamento horizontal alternado */
+.process-step:nth-child(odd) { transform: translate(-30px, 30px); }
+.process-step:nth-child(even) { transform: translate(30px, 30px); }
+  
+  /* Classe adicionada via JavaScript para animar */
+.process-step.visible {
+  opacity: 1;
+  transform: translate(0, 0);
+}
+  
+  /* Alinhamento alternado dos passos */
+.process-step:nth-child(odd) {
+  left: 0;
+  padding-right: 50px;
+  justify-content: flex-end;
+  text-align: right;
+  flex-direction: row-reverse;
+}
+  
+.process-step:nth-child(even) {
+  left: 50%;
+  padding-left: 50px;
+}
+  
+  /* Círculo na linha do tempo */
+.process-step::after {
+  content: '';
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  top: 1.5rem;
+  background: white;
+  border: 4px solid var(--primary);
+  border-radius: 50%;
+  z-index: 1;
+  box-shadow: 0 0 0 4px white, 0 0 18px rgba(0,212,170,0.25);
+}
+  
+  .process-step:nth-child(odd)::after {
+    right: -11px;
+  }
+  
+  .process-step:nth-child(even)::after {
+    left: -11px;
+  }
+  
+.step-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  color: #fff;
+  margin: 0 20px;
+  min-width: 56px;
+  width: 56px;
+  height: 56px;
+  text-align: center;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  box-shadow: 0 8px 18px rgba(0,0,0,0.12), 0 0 20px rgba(0, 212, 170, 0.18);
+}
+  
+  /* Estilo do card de cada passo */
+.step-content {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: 28px 28px 28px 34px;
+  box-shadow: var(--shadow-lg);
+  transition: var(--transition-normal);
+  position: relative;
+  top: 0;
+  border: 1px solid rgba(0,0,0,0.06);
+}
+/* filete de destaque à esquerda do card */
+.step-content::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  border-top-left-radius: var(--radius-lg);
+  border-bottom-left-radius: var(--radius-lg);
+  background: linear-gradient(180deg, var(--primary), var(--secondary));
+  opacity: 0.9;
+}
+  
+.step-content:hover {
+  top: -6px; /* elevação suave */
+  box-shadow: var(--shadow-xl);
+}
+  
+.step-content h2 {
+  font-size: 1.45rem;
+  margin-bottom: 10px;
+  color: var(--primary);
+}
+  
+.step-content p {
+  font-size: 1rem;
+  color: var(--text-light);
+  line-height: 1.7;
+}
+  
+  /* 3. RESPONSIVIDADE
+     --------------------------------------------------------- */
+@media (max-width: 768px) {
+  .support-hero {
+    margin: 90px auto 60px;
+    padding: 56px 18px;
+  }
+  .support-hero-content h1 {
+    font-size: 2.4rem;
+  }
+
+  .support-details .container::before,
+  .timeline-container::before {
+    left: 20px; /* linha encosta na esquerda em telas menores */
+  }
+
+  .process-step,
+  .process-step:nth-child(even),
+  .process-step:nth-child(odd) {
+    width: 100%;
+    left: 0;
+    padding-left: 60px; /* espaço para a linha e o círculo */
+    padding-right: 0;
+    text-align: left;
+    flex-direction: row;
+    justify-content: flex-start;
+    transform: translateY(20px); /* neutro para mobile */
+  }
+
+  .process-step.visible {
+    transform: translateY(0);
+  }
+
+  .process-step::after,
+  .process-step:nth-child(odd)::after,
+  .process-step:nth-child(even)::after {
+    left: 9px; /* posiciona o círculo na linha esquerda */
+  }
+}

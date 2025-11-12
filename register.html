@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Criar Conta - SMARTSOLAR</title>
+  <meta name="description" content="Crie sua conta no SmartSolar.">
+  <link rel="shortcut icon" href="src/images/smartlogo.png" type="image/x-icon">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="src/styles/styles.css">
+<link rel="stylesheet" href="src/styles/register.css">
+</head>
+<body class="auth-glass">
+  <div class="auth-page-wrap">
+    <div class="auth-container" role="main" aria-labelledby="authTitle">
+      <div class="auth-header">
+        <div class="auth-avatar" aria-hidden="true"><i class="fas fa-user-plus"></i></div>
+        <h2 id="authTitle">Crie sua conta</h2>
+        <p class="auth-subtitle">Preencha os dados para criar sua conta e acessar o dashboard SmartSolar</p>
+      </div>
+      <div class="auth-content">
+        <form class="auth-form register-form active" id="registerForm">
+          <div class="form-group">
+            <label for="registerName">Nome completo</label>
+            <div class="input-wrap">
+              <i class="input-icon fas fa-user" aria-hidden="true"></i>
+              <input type="text" id="registerName" placeholder="Seu nome completo" required autocomplete="name">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="registerEmail">E-mail</label>
+            <div class="input-wrap">
+              <i class="input-icon fas fa-envelope" aria-hidden="true"></i>
+              <input type="email" id="registerEmail" placeholder="Seu e-mail" required autocomplete="email">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="registerCPF">CPF</label>
+            <div class="input-wrap">
+              <i class="input-icon fas fa-id-card" aria-hidden="true"></i>
+              <input type="text" id="registerCPF" placeholder="000.000.000-00" inputmode="numeric" autocomplete="cc-csc">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="registerPhone">Telefone</label>
+            <div class="input-wrap">
+              <i class="input-icon fas fa-phone" aria-hidden="true"></i>
+              <input type="tel" id="registerPhone" placeholder="(99) 9 9999-9999" autocomplete="tel">
+            </div>
+          </div>
+          <div class="form-group" style="display:flex; gap:10px;">
+            <label for="registerCity" style="flex:1">Cidade</label>
+            <label for="registerState" style="flex:0 0 110px">Estado</label>
+          </div>
+          <div style="display:flex; gap:10px; margin-bottom:16px;">
+            <div style="flex:1">
+              <div class="input-wrap">
+                <i class="input-icon fas fa-city" aria-hidden="true"></i>
+                <input type="text" id="registerCity" placeholder="Sua cidade">
+              </div>
+            </div>
+            <div style="flex:0 0 110px">
+              <div class="input-wrap">
+                  <select id="registerState" style="width:100%; padding:13px 12px; border-radius:12px; background:#ffffff; border:1px solid rgba(0,0,0,0.12); color:#000;">
+                    <option value=""></option>
+                  <option value="SP">SP</option>
+                  <option value="RJ">RJ</option>
+                  <option value="MG">MG</option>
+                  <option value="ES">ES</option>
+                  <option value="BA">BA</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="registerPassword">Senha</label>
+            <div class="input-wrap">
+              <i class="input-icon fas fa-lock" aria-hidden="true"></i>
+              <input type="password" id="registerPassword" placeholder="Crie uma senha" required autocomplete="new-password">
+              <button type="button" class="toggle-pass" aria-label="Mostrar senha" data-target="registerPassword"><i class="fas fa-eye" aria-hidden="true"></i></button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="registerConfirmPassword">Confirmar senha</label>
+            <div class="input-wrap">
+              <i class="input-icon fas fa-lock" aria-hidden="true"></i>
+              <input type="password" id="registerConfirmPassword" placeholder="Confirme sua senha" required autocomplete="new-password">
+              <button type="button" class="toggle-pass" aria-label="Mostrar senha" data-target="registerConfirmPassword"><i class="fas fa-eye" aria-hidden="true"></i></button>
+            </div>
+          </div>
+          <div class="form-options">
+            <label class="checkbox">
+              <input type="checkbox" id="acceptTerms" required>
+              <span>Concordo com os <a href="#">termos de uso</a></span>
+            </label>
+          </div>
+          <button type="submit" class="btn btn-primary btn-full"><i class="fas fa-user-plus" aria-hidden="true"></i> Criar conta</button>
+        </form>
+        <div style="margin-top:14px; text-align:center; width:100%;">
+          <span class="signup-inline" style="display:inline-block; font-size:0.92rem; color:inherit; opacity:0.9;">Já tem uma conta?
+            <a href="auth.html" class="signup-inline-link" aria-label="Entrar">Entrar</a>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script defer src="src/scripts/api-base.js"></script>
+<script defer src="src/scripts/remote.js"></script>
+<script defer src="src/scripts/register.js"></script>
+  <script>
+    document.addEventListener('click', function(e){
+      const btn = e.target.closest('.toggle-pass');
+      if (!btn) return;
+      const id = btn.getAttribute('data-target');
+      const input = document.getElementById(id);
+      if (!input) return;
+      const isPwd = input.type === 'password';
+      input.type = isPwd ? 'text' : 'password';
+      const i = btn.querySelector('i');
+      if (i) { i.classList.toggle('fa-eye'); i.classList.toggle('fa-eye-slash'); }
+      btn.setAttribute('aria-label', isPwd ? 'Ocultar senha' : 'Mostrar senha');
+    });
+  </script>
+</body>
+</html>

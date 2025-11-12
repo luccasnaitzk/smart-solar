@@ -1,0 +1,89 @@
+/*
+  Botão “Voltar para o Início” – estilo dedicado
+  - Usa tokens globais de styles.css (cores, sombras, raios, transições)
+  - Não requer mudanças no HTML (alvo: .voltar-container > a.btn)
+*/
+
+.voltar-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 56px auto 24px;
+  padding: 0 16px;
+}
+
+/* Permite customizar facilmente o gradiente do botão, se necessário */
+.voltar-container {
+  --voltar-gradient: var(--gradient-primary);
+}
+
+.voltar-container .btn {
+  /* base .btn já define layout/efeitos; aqui damos uma “cara” própria */
+  background: var(--voltar-gradient);
+  color: #fff;
+  box-shadow: var(--shadow-lg);
+  border-radius: var(--radius-full);
+  padding: 14px 28px;
+  gap: 10px;
+  /* Garante que não depende da animação global de .btn para aparecer */
+  opacity: 1;
+  animation: none;
+}
+
+.voltar-container .btn:hover {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: var(--shadow-xl), var(--shadow-neon);
+}
+
+.voltar-container .btn:active {
+  transform: translateY(-1px) scale(0.99);
+  box-shadow: var(--shadow-lg);
+}
+
+.voltar-container .btn i {
+  font-size: 0.95rem;
+  margin-right: 8px; /* reforça espaçamento em relação ao base */
+}
+
+.voltar-container .btn:hover i {
+  transform: translateX(-4px);
+}
+
+/* Acessibilidade: foco visível e amigável ao teclado */
+.voltar-container .btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(0, 212, 255, 0.25), 0 6px 24px rgba(0, 0, 0, 0.15);
+}
+
+/* Reduz movimentos caso o usuário prefira */
+@media (prefers-reduced-motion: reduce) {
+  .voltar-container .btn,
+  .voltar-container .btn::before,
+  .voltar-container .btn i {
+    transition: none !important;
+    animation: none !important;
+    transform: none !important;
+  }
+  /* Garante visibilidade mesmo sem animação base de .btn (que define opacity:0) */
+  .voltar-container .btn {
+    opacity: 1 !important;
+  }
+}
+
+/* Responsividade: espaço confortável e toque fácil em telas pequenas */
+@media (max-width: 480px) {
+  .voltar-container {
+    margin: 40px auto 16px;
+  }
+  .voltar-container .btn {
+    width: 100%;
+    max-width: 420px;
+    padding: 14px 20px;
+    font-size: 0.95rem;
+  }
+}
+
+/* Tema escuro: realce ligeiramente a luminosidade do botão */
+body[data-theme="dark"] .voltar-container .btn {
+  box-shadow: 0 10px 24px rgba(0,0,0,0.35), 0 0 0 rgba(0,0,0,0);
+}

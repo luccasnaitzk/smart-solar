@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Entrar ou Cadastrar - SMARTSOLAR</title>
+  <meta name="description" content="Acesse sua conta ou cadastre-se para usar o SmartSolar.">
+  <link rel="shortcut icon" href="src/images/smartlogo.png" type="image/x-icon">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="src/styles/styles.css">
+  <link rel="stylesheet" href="src/styles/auth.css">
+  <script>
+    (function(){
+      try {
+        var prm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (prm) document.documentElement.setAttribute('data-perf-lite','1');
+      } catch(e) {}
+    })();
+  </script>
+</head>
+<body class="auth-glass-page">
+  <div class="auth-page-container" role="main" aria-labelledby="authTitle">
+    <div class="auth-header">
+      <div class="auth-avatar" aria-hidden="true"><i class="fas fa-user"></i></div>
+      <h2 id="authTitle">Acesse sua conta</h2>
+      <p class="auth-subtitle">Faça login ou crie sua conta para acessar o dashboard SmartSolar</p>
+    </div>
+
+    <div class="auth-content">
+      <form class="auth-form active login-form" id="loginForm">
+        <div class="form-group">
+          <label for="loginEmail">E-mail</label>
+          <div class="input-wrap">
+            <i class="input-icon fas fa-envelope" aria-hidden="true"></i>
+            <input type="email" id="loginEmail" placeholder="Seu e-mail" required autocomplete="email">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="loginPassword">Senha</label>
+          <div class="input-wrap">
+            <i class="input-icon fas fa-lock" aria-hidden="true"></i>
+            <input type="password" id="loginPassword" placeholder="Sua senha" required autocomplete="current-password">
+            <button type="button" class="toggle-pass" aria-label="Mostrar senha" data-target="loginPassword"><i class="fas fa-eye" aria-hidden="true"></i></button>
+          </div>
+        </div>
+        <div class="form-options">
+          <label class="checkbox">
+            <input type="checkbox" id="rememberMe">
+            <span>Lembrar-me</span>
+          </label>
+          <a href="#" class="forgot-password" id="forgotPassword">Esqueci a senha</a>
+        </div>
+        <button type="submit" class="btn btn-primary btn-full"><i class="fas fa-sign-in-alt" aria-hidden="true"></i> Entrar</button>
+      </form>
+      <div style="margin-top:12px; text-align:center; width:100%;">
+        <span class="signup-inline" style="display:inline-block; font-size:0.92rem; color:inherit; opacity:0.9;">Não Tem Uma Conta?
+          <a id="gotoRegister" href="register.html" class="signup-inline-link" aria-label="Criar Conta">Criar Conta</a>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <script defer src="src/scripts/api-base.js"></script>
+  <script defer src="src/scripts/remote.js"></script>
+  <script defer src="src/scripts/auth.js"></script>
+  <script>
+    // Badge simples de status da API/DB
+    (function(){
+      const badge = document.createElement('div');
+      badge.id = 'apiStatusBadge';
+      Object.assign(badge.style, {
+        position:'fixed', right:'12px', bottom:'12px', zIndex:'9999',
+        padding:'8px 12px', borderRadius:'10px', font:'600 12px Poppins,system-ui',
+        color:'#0b1020', background:'#ffd166', boxShadow:'0 4px 18px rgba(0,0,0,.25)', opacity:'0.95'
+      });
+      badge.textContent = 'Checando API...';
+      document.body.appendChild(badge);
+      function set(text, ok){
+        badge.textContent = text;
+        badge.style.background = ok ? '#06d6a0' : '#ef476f';
+        badge.style.color = ok ? '#00100a' : '#fff';
+      }
+      const base = window.API_BASE;
+      if (!base) { set('Offline (sem API)', false); return; }
+      fetch(base + '/ping.php', { method:'GET' })
+        .then(r => r.json()).then(j => {
+          if (j && j.ok) set(j.db ? 'API ON • DB OK' : 'API ON • DB ERRO', !!j.db);
+          else set('API ERRO', false);
+        }).catch(()=> set('API INDISPONÍVEL', false));
+    })();
+  </script>
+  <script>
+    // Toggle de visibilidade de senha (escopo local da página)
+    document.addEventListener('click', function(e){
+      const btn = e.target.closest('.toggle-pass');
+      if (!btn) return;
+      const id = btn.getAttribute('data-target');
+      const input = document.getElementById(id);
+      if (!input) return;
+      const isPwd = input.type === 'password';
+      input.type = isPwd ? 'text' : 'password';
+      const i = btn.querySelector('i');
+      if (i) {
+        i.classList.toggle('fa-eye');
+        i.classList.toggle('fa-eye-slash');
+      }
+      btn.setAttribute('aria-label', isPwd ? 'Ocultar senha' : 'Mostrar senha');
+    });
+  </script>
+  <script>
+    (function(){
+      const a = document.getElementById('gotoRegister');
+      if (!a) return;
+      a.addEventListener('click', function(ev){
+        ev.preventDefault();
+        location.assign(a.getAttribute('href'));
+      });
+    })();
+  </script>
+  <script>
+    // Previne qualquer comportamento de modal na página de auth
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('Página de auth carregada - modo página normal');
+    });
+  </script>
+</body>
+</html>

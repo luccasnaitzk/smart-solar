@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Meus Tickets - SMARTSOLAR</title>
+  <link rel="shortcut icon" href="src/images/smartlogo.png" type="image/x-icon">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="src/styles/styles.css">
+  <link rel="stylesheet" href="src/styles/header.css">
+  <style>
+    /* Layout principal */
+    body {
+      background: #f8f9fa;
+      min-height: 100vh;
+      color: #2c3e50;
+      display: flex;
+      flex-direction: column;
+    }
+
+    main { 
+      max-width: 1200px; 
+      margin: 140px auto 60px; 
+      padding: 0 20px;
+      flex: 1;
+      width: 100%;
+    }
+
+    footer {
+      margin-top: auto;
+    }
+
+    /* Header da página */
+    .tickets-header { 
+      display: flex; 
+      align-items: center; 
+      justify-content: space-between; 
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 2px solid rgba(0, 212, 170, 0.3);
+    }
+
+    .tickets-header h1 { 
+      font-size: 2.25rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #00d4aa 0%, #1db88e 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .tickets-header h1::before {
+      content: '🎫';
+      font-size: 2rem;
+      -webkit-text-fill-color: initial;
+    }
+
+    .tickets-actions { 
+      display: flex; 
+      gap: 0.75rem; 
+    }
+
+    /* Tabela moderna */
+    .tickets-table { 
+      width: 100%; 
+      border-collapse: separate;
+      border-spacing: 0;
+      background: #ffffff;
+      box-shadow: 
+        0 4px 20px rgba(0, 0, 0, 0.08),
+        0 0 0 1px rgba(0, 0, 0, 0.05);
+      border-radius: 16px; 
+      overflow: hidden;
+    }
+
+    .tickets-table th, 
+    .tickets-table td { 
+      padding: 1rem 1.25rem; 
+      text-align: left; 
+      border-bottom: 1px solid #e9ecef;
+    }
+
+    .tickets-table thead {
+      background: linear-gradient(135deg, rgba(0, 212, 170, 0.1) 0%, rgba(0, 212, 170, 0.05) 100%);
+    }
+
+    .tickets-table th { 
+      font-weight: 700;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #00a389;
+      position: relative;
+    }
+
+    .tickets-table th::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #00d4aa, transparent);
+    }
+
+    .tickets-table tbody tr {
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .tickets-table tbody tr:hover {
+      background: rgba(0, 212, 170, 0.05);
+      transform: scale(1.005);
+    }
+
+    .tickets-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .tickets-table td {
+      color: #495057;
+      font-size: 0.95rem;
+    }
+
+    .tickets-table td:first-child {
+      font-weight: 600;
+      color: #00a389;
+      font-family: 'Courier New', monospace;
+    }
+
+    /* Badges de status */
+    .badge { 
+      display: inline-flex; 
+      align-items: center; 
+      gap: 6px; 
+      padding: 6px 14px; 
+      border-radius: 20px; 
+      font-size: 0.85rem; 
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      transition: all 0.3s ease;
+    }
+
+    .badge::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.2); }
+    }
+
+    .badge.aberto { 
+      background: linear-gradient(135deg, #fff3cd 0%, #ffe9a3 100%);
+      color: #856404;
+      border: 1px solid #ffc107;
+      box-shadow: 0 2px 8px rgba(255, 193, 7, 0.2);
+    }
+
+    .badge.aberto::before {
+      background: #ffc107;
+      box-shadow: 0 0 4px rgba(255, 193, 7, 0.6);
+    }
+
+    .badge.fechado { 
+      background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+      color: #155724;
+      border: 1px solid #28a745;
+      box-shadow: 0 2px 8px rgba(40, 167, 69, 0.2);
+    }
+
+    .badge.fechado::before {
+      background: #28a745;
+      box-shadow: 0 0 4px rgba(40, 167, 69, 0.6);
+    }
+
+    /* Estado vazio */
+    .empty { 
+      text-align: center; 
+      padding: 3rem 1.5rem; 
+      color: #6c757d;
+      font-size: 1.05rem;
+      font-style: italic;
+    }
+
+    .empty::before {
+      content: '📭';
+      display: block;
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      opacity: 0.6;
+    }
+
+    /* Animação de entrada */
+    .tickets-table tbody tr {
+      animation: fadeInUp 0.5s ease backwards;
+    }
+
+    .tickets-table tbody tr:nth-child(1) { animation-delay: 0.1s; }
+    .tickets-table tbody tr:nth-child(2) { animation-delay: 0.15s; }
+    .tickets-table tbody tr:nth-child(3) { animation-delay: 0.2s; }
+    .tickets-table tbody tr:nth-child(4) { animation-delay: 0.25s; }
+    .tickets-table tbody tr:nth-child(5) { animation-delay: 0.3s; }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Responsivo */
+    @media (max-width: 768px) {
+      .tickets-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+      }
+
+      .tickets-header h1 {
+        font-size: 1.75rem;
+      }
+
+      .tickets-actions {
+        width: 100%;
+      }
+
+      .tickets-actions .btn {
+        flex: 1;
+        justify-content: center;
+      }
+
+      .tickets-table {
+        font-size: 0.85rem;
+      }
+
+      .tickets-table th,
+      .tickets-table td {
+        padding: 0.75rem 0.5rem;
+      }
+
+      /* Esconde algumas colunas em mobile */
+      .tickets-table th:nth-child(3),
+      .tickets-table td:nth-child(3),
+      .tickets-table th:nth-child(4),
+      .tickets-table td:nth-child(4) {
+        display: none;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .tickets-table th:nth-child(5),
+      .tickets-table td:nth-child(5) {
+        display: none;
+      }
+    }
+
+    /* Scroll suave na tabela */
+    .tickets-table-wrapper {
+      overflow-x: auto;
+      border-radius: 16px;
+    }
+
+    .tickets-table-wrapper::-webkit-scrollbar {
+      height: 8px;
+    }
+
+    .tickets-table-wrapper::-webkit-scrollbar-track {
+      background: #f1f3f5;
+      border-radius: 4px;
+    }
+
+    .tickets-table-wrapper::-webkit-scrollbar-thumb {
+      background: rgba(0, 212, 170, 0.4);
+      border-radius: 4px;
+    }
+
+    .tickets-table-wrapper::-webkit-scrollbar-thumb:hover {
+      background: rgba(0, 212, 170, 0.6);
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <nav id="navbar" aria-label="Principal">
+      <a href="index.html" class="brand" aria-label="Página inicial">
+  <img src="src/images/smartlogo.png" alt="SmartSolar Logo" class="brand-logo" decoding="async">
+        <span>SMARTSOLAR</span>
+      </a>
+      <button class="nav-toggle" aria-controls="nav_list" aria-expanded="false">
+        <i class="fas fa-bars"></i>
+      </button>
+      <ul id="nav_list" class="nav-list">
+        <li class="nav_item"><a href="index.html#home">Início</a></li>
+        <li class="nav_item"><a href="index.html#services">Serviços</a></li>
+        <li class="nav_item"><a href="index.html#sobre">Sobre</a></li>
+        <li class="nav_item"><a href="#" class="open-ticket">Contato</a></li>
+      </ul>
+    </nav>
+  </header>
+  <main>
+    <div class="tickets-header">
+      <h1>Meus Tickets</h1>
+      <div class="tickets-actions">
+        <button id="newTicket" class="btn btn-primary open-ticket"><i class="fas fa-plus"></i> Novo Ticket</button>
+        <a href="index.html" class="btn btn-outline"><i class="fas fa-home"></i> Home</a>
+      </div>
+    </div>
+    <div class="tickets-table-wrapper">
+      <table class="tickets-table" id="ticketsTable">
+        <thead>
+          <tr>
+            <th>Protocolo</th>
+            <th>Nome</th>
+            <th>E-mail</th>
+            <th>Categoria</th>
+            <th>Data</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td colspan="6" class="empty">Carregando tickets…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-content">
+      <div class="footer-section">
+        <h3>SMARTSOLAR</h3>
+        <p>Energia inteligente para um futuro sustentável.</p>
+      </div>
+      <div class="footer-section">
+        <h4>Links Rápidos</h4>
+        <ul>
+          <li><a href="index.html#home">Início</a></li>
+          <li><a href="index.html#services">Serviços</a></li>
+          <li><a href="index.html#sobre">Sobre</a></li>
+          <li><a href="#" class="open-ticket">Contato</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <small>© 2025 SMARTSOLAR, Hexadevs. Todos os direitos reservados.</small>
+    </div>
+  </footer>
+
+  <!-- Floating Ticket + WhatsApp -->
+  <a id="whatsLauncher" class="ticket-launcher whatsapp-launcher" href="https://wa.me/5519999999999?text=Ol%C3%A1%20SmartSolar%2C%20gostaria%20de%20falar%20com%20o%20suporte." target="_blank" rel="noopener" aria-label="Abrir WhatsApp">
+    <i class="fab fa-whatsapp" aria-hidden="true"></i>
+    <span>WhatsApp</span>
+  </a>
+  <button id="ticketLauncher" class="ticket-launcher" aria-label="Abrir suporte">
+    <i class="fas fa-headset" aria-hidden="true"></i>
+    <span>Suporte</span>
+  </button>
+  <div id="ticketWidget" class="ticket-widget" aria-hidden="true" role="dialog" aria-label="Abrir chamado de suporte">
+    <div class="ticket-header">
+      <div class="ticket-title"><i class="fas fa-ticket-alt"></i> Abrir Chamado</div>
+      <button class="ticket-close" aria-label="Fechar"><i class="fas fa-times"></i></button>
+    </div>
+    <form id="ticketForm" class="ticket-form">
+      <label>
+        Nome
+        <input type="text" id="ticketName" placeholder="Seu nome" required>
+      </label>
+      <label>
+        E-mail
+        <input type="email" id="ticketEmail" placeholder="Seu e-mail" required>
+      </label>
+      <label>
+        Categoria
+        <select id="ticketCategory" required>
+          <option value="">Selecione</option>
+          <option value="orcamento">Orçamento</option>
+          <option value="duvida">Dúvida</option>
+          <option value="suporte">Suporte Técnico</option>
+        </select>
+      </label>
+      <label>
+        Descrição
+        <textarea id="ticketMessage" rows="4" placeholder="Descreva seu problema ou solicitação" required></textarea>
+      </label>
+      <div class="ticket-actions">
+        <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i> Enviar</button>
+        <button type="button" class="btn btn-outline ticket-cancel">Cancelar</button>
+      </div>
+      <p class="ticket-disclaimer">Ao enviar, um número de protocolo será gerado e exibido aqui.</p>
+      <div id="ticketProtocol" class="ticket-protocol" hidden></div>
+    </form>
+  </div>
+
+  <script defer src="src/scripts/script.js"></script>
+  <script defer src="src/scripts/ticket.js"></script>
+  <script>
+    // Populate table from localStorage tickets
+    document.addEventListener('DOMContentLoaded', function(){
+      const tbody = document.querySelector('#ticketsTable tbody');
+      const data = JSON.parse(localStorage.getItem('tickets') || '[]');
+      if (!data.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty">Nenhum ticket encontrado. Crie seu primeiro chamado!</td></tr>';
+        return;
+      }
+      tbody.innerHTML = data.slice().reverse().map(t => {
+        const date = new Date(t.createdAt);
+        const d = date.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric' });
+        const h = date.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+        const statusClass = t.status === 'aberto' ? 'aberto' : 'fechado';
+        const statusText = t.status === 'aberto' ? 'Aberto' : 'Fechado';
+        
+        // Formata categoria
+        const categoryMap = {
+          'orcamento': 'Orçamento',
+          'duvida': 'Dúvida',
+          'suporte': 'Suporte Técnico'
+        };
+        const categoryDisplay = categoryMap[t.category] || t.category;
+        
+        return `<tr>
+          <td><strong>${t.code}</strong></td>
+          <td>${t.name}</td>
+          <td>${t.email}</td>
+          <td>${categoryDisplay}</td>
+          <td><small>${d} às ${h}</small></td>
+          <td><span class="badge ${statusClass}">${statusText}</span></td>
+        </tr>`;
+      }).join('');
+    });
+  </script>
+</body>
+</html>

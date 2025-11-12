@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Projeto SmartSolar - SMARTSOLAR</title>
+  <link rel="shortcut icon" href="src/images/smartlogo.png" type="image/x-icon">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="src/styles/styles.css">
+  <link rel="stylesheet" href="src/styles/header.css">
+  <link rel="stylesheet" href="src/styles/projeto-smartsolar.css">
+  <link rel="stylesheet" href="src/styles/botaovoltar.css">
+  <link rel="stylesheet" href="src/styles/auth.css">
+</head>
+<body>
+  <header class="site-header">
+    <nav id="navbar" aria-label="Principal">
+      <a href="index.html" class="brand" aria-label="Página inicial">
+  <img src="src/images/smartlogo.png" alt="SmartSolar Logo" class="brand-logo" decoding="async">
+        <span>SMARTSOLAR</span>
+      </a>
+      <button class="nav-toggle" aria-controls="nav_list" aria-expanded="false">
+        <i class="fas fa-bars"></i>
+      </button>
+      <ul id="nav_list" class="nav-list">
+        <li class="nav_item"><a href="index.html#home">Início</a></li>
+        <li class="nav_item"><a href="index.html#services">Serviços</a></li>
+        <li class="nav_item"><a href="index.html#sobre">Sobre</a></li>
+  <li class="nav_item"><a href="#" class="open-ticket">Contato</a></li>
+        <li class="nav_item auth-item">
+          <a class="login-btn" href="auth.html">
+            <i class="fas fa-user"></i>
+            <span>Entrar</span>
+          </a>
+        </li>
+      </ul>
+    </nav>
+  </header>
+
+
+  <main>
+    <section class="project-hero">
+      <div class="project-hero-content">
+        <h1>Projeto SmartSolar</h1>
+        <p>A Vanguarda da Energia Solar Residencial e Empresarial</p>
+      </div>
+    </section>
+
+    <section class="project-details">
+      <div class="container">
+        <h2>Nossa Missão</h2>
+        <p>O Projeto SmartSolar nasceu com a missão de revolucionar o setor de energia solar, tornando-o mais acessível, eficiente e inteligente. Combinamos a mais alta tecnologia em painéis fotovoltaicos com um sistema de monitoramento em tempo real, garantindo que você tenha total controle sobre sua produção e consumo de energia.</p>
+
+        <div class="features-grid">
+          <div class="feature-item">
+            <i class="fas fa-cogs"></i>
+            <h3>Tecnologia de Ponta</h3>
+            <p>Utilizamos painéis solares com a mais alta taxa de eficiência do mercado, inversores inteligentes e uma plataforma de software que otimiza a geração de energia com base em previsões climáticas e padrões de consumo.</p>
+          </div>
+          <div class="feature-item">
+            <i class="fas fa-chart-line"></i>
+            <h3>Análise Preditiva</h3>
+            <p>Nosso sistema utiliza algoritmos de machine learning para prever a produção de energia e o consumo da sua residência ou empresa, permitindo um planejamento financeiro mais preciso e a identificação de oportunidades de economia.</p>
+          </div>
+          <div class="feature-item">
+            <i class="fas fa-leaf"></i>
+            <h3>Sustentabilidade</h3>
+            <p>Cada projeto é pensado para maximizar a redução da pegada de carbono. Ao escolher a SmartSolar, você não só economiza na conta de luz, mas também contribui ativamente para um futuro mais verde e sustentável.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="voltar-container">
+      <a href="index.html" class="btn">
+        <i class="fas fa-arrow-left"></i> Voltar para o Início
+      </a>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-content">
+        <div class="footer-section">
+            <h3>SMARTSOLAR</h3>
+            <p>Energia inteligente para um futuro sustentável.</p>
+        </div>
+    <div class="footer-section">
+            <h4>Links Rápidos</h4>
+            <ul>
+                <li><a href="index.html#home">Início</a></li>
+                <li><a href="index.html#services">Serviços</a></li>
+                <li><a href="index.html#sobre">Sobre</a></li>
+                <li><a href="#" class="open-ticket">Contato</a></li>
+                <li><a href="meus-tickets.html">Meus Tickets</a></li>
+            </ul>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <small>© 2025 SMARTSOLAR, Hexadevs. Todos os direitos reservados.</small>
+    </div>
+  </footer>
+
+  <!-- Floating Ticket + WhatsApp -->
+  <a id="whatsLauncher" class="ticket-launcher whatsapp-launcher" href="https://wa.me/5519999999999?text=Ol%C3%A1%20SmartSolar%2C%20gostaria%20de%20falar%20com%20o%20suporte." target="_blank" rel="noopener" aria-label="Abrir WhatsApp">
+    <i class="fab fa-whatsapp" aria-hidden="true"></i>
+    <span>WhatsApp</span>
+  </a>
+  <button id="ticketLauncher" class="ticket-launcher" aria-label="Abrir suporte">
+    <i class="fas fa-headset" aria-hidden="true"></i>
+    <span>Suporte</span>
+  </button>
+  <div id="ticketWidget" class="ticket-widget" aria-hidden="true" role="dialog" aria-label="Abrir chamado de suporte">
+    <div class="ticket-header">
+      <div class="ticket-title"><i class="fas fa-ticket-alt"></i> Abrir Chamado</div>
+      <button class="ticket-close" aria-label="Fechar"><i class="fas fa-times"></i></button>
+    </div>
+    <form id="ticketForm" class="ticket-form">
+      <label>
+        Nome
+        <input type="text" id="ticketName" placeholder="Seu nome" required>
+      </label>
+      <label>
+        E-mail
+        <input type="email" id="ticketEmail" placeholder="Seu e-mail" required>
+      </label>
+      <label>
+        Categoria
+        <select id="ticketCategory" required>
+          <option value="">Selecione</option>
+          <option value="orcamento">Orçamento</option>
+          <option value="duvida">Dúvida</option>
+          <option value="suporte">Suporte Técnico</option>
+        </select>
+      </label>
+      <label>
+        Descrição
+        <textarea id="ticketMessage" rows="4" placeholder="Descreva seu problema ou solicitação" required></textarea>
+      </label>
+      <div class="ticket-actions">
+        <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i> Enviar</button>
+        <button type="button" class="btn btn-outline ticket-cancel">Cancelar</button>
+      </div>
+      <p class="ticket-disclaimer">Ao enviar, um número de protocolo será gerado e exibido aqui.</p>
+      <div id="ticketProtocol" class="ticket-protocol" hidden></div>
+    </form>
+  </div>
+
+  <script defer src="src/scripts/auth.js"></script>
+  <script defer src="src/scripts/ticket.js"></script>
+  
+</body>
+</html>

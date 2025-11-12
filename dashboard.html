@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SmartSolar - Dashboard</title>
+  <link rel="shortcut icon" href="src/images/unnamed.png" type="image/x-icon">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="src/styles/dashboard.css">
+</head>
+<body data-theme="dark">
+<div class="animated-bg">
+  <div class="animated-particles">
+    <div class="animated-particle p1"></div>
+    <div class="animated-particle p2"></div>
+    <div class="animated-particle p3"></div>
+    <div class="animated-particle p4"></div>
+    <div class="animated-particle p5"></div>
+  </div>
+</div>
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+  <h1><img src="src/images/unnamed.png" alt="" decoding="async"></h1>
+    </div>
+    <div class="sidebar-menu">
+      <button class="tab active" data-section="dashboard">
+        <i class="fas fa-chart-line"></i> Dashboard
+      </button>
+      <button class="tab" data-section="monitoramento">
+        <i class="fas fa-desktop"></i> Monitoramento
+      </button>
+      <button class="tab" data-section="clima">
+        <i class="fas fa-cloud-sun"></i> Clima
+      </button>
+      <button class="tab" data-section="relatorios">
+        <i class="fas fa-file-alt"></i> Relatórios
+      </button>
+      <button class="tab" data-section="placas">
+        <i class="fas fa-solar-panel"></i> Placas
+      </button>
+      <button class="tab" data-section="usuarios">
+        <i class="fas fa-users"></i> Usuários
+      </button>
+      <button class="tab" data-section="configuracoes">
+        <i class="fas fa-cog"></i> Configurações
+      </button>
+    </div>
+    <div class="sidebar-footer">
+      <div class="user-menu" id="userMenu">
+        <a href="profile.html" title="Abrir perfil"><img src="https://ui-avatars.com/api/?name=Usuario&background=00d4ff&color=fff" alt="Usuário"></a>
+        <a id="openProfilePage" href="profile.html" class="user-name-link">Usuário</a>
+      </div>
+    </div>
+    </div>
+  </div>
+  <!-- Conteúdo Principal -->
+  <div class="main-content">
+    <!-- Header -->
+    <header>
+      <div class="header-left">
+        <h2 id="pageTitle">Dashboard</h2>
+      </div>
+      <div class="header-right">
+        <div class="weather-info">
+          <i class="fas fa-cloud-sun" title="Clima"></i>
+          <span>28°C • <i class="fas fa-tint" title="Umidade"></i> 45%</span>
+        </div>
+  <button id="darkToggle" class="theme-toggle">🌙</button>
+        
+        <span id="headerTime" style="margin-left:1rem;font-weight:600;color:#00d4ff;font-size:1.1rem;border:2px solid #00d4ff;border-radius:8px;padding:0.3rem 1rem;display:inline-flex;align-items:center;gap:0.5rem;background:#18192b;">
+          <i class="fas fa-clock" style="color:#00d4ff;font-size:1.1rem;"></i>
+          <span id="headerTimeValue"></span>
+        </span>
+        <button id="logoutBtn" class="logout-btn" title="Sair" style="margin-left:0.7rem; background:#e63946; color:#fff; border:none; border-radius:8px; padding:0.5rem 1.1rem; font-size:1rem; cursor:pointer; transition:background 0.2s;">
+          <i class="fas fa-sign-out-alt"></i> Sair
+        </button>
+      </div>
+    </header>
+
+    <main>
+      <!-- DASHBOARD -->
+      <section id="section-dashboard">
+        <div class="dashboard-header">
+          <div style="display: flex; align-items: center; gap: 1rem;">
+            <h2>📊 Visão Geral do Sistema</h2>
+            <button id="toggleView" class="toggle-view-btn" title="Selecionar placa">
+              <i class="fas fa-chevron-down"></i>
+            </button>
+          </div>
+          <div id="placaMiniSelect" class="placa-mini-select" style="display:none;"></div>
+          <div class="time-filter">
+            <button class="filter-btn active"><i class="fas fa-calendar-day"></i> Hoje</button>
+            <button class="filter-btn"><i class="fas fa-calendar-week"></i> Semana</button>
+            <button class="filter-btn"><i class="fas fa-calendar-alt"></i> Mês</button>
+          </div>
+        </div>
+
+        <!-- KPIs Principais -->
+        <div class="grid kpi-grid">
+          <div class="card kpi modern-kpi">
+            <div class="kpi-icon gradient-cyan">
+              <i class="fas fa-sun"></i>
+            </div>
+            <div class="kpi-content">
+              <h3>Geração Atual</h3>
+              <p id="powerNow">0.0 kW</p>
+              <span class="kpi-trend up"><i class="fas fa-arrow-up"></i> 12%</span>
+              <div class="kpi-spark"><canvas id="spark-powerNow"></canvas></div>
+            </div>
+          </div>
+          
+          <div class="card kpi modern-kpi">
+            <div class="kpi-icon gradient-yellow">
+              <i class="fas fa-bolt"></i>
+            </div>
+            <div class="kpi-content">
+              <h3>Consumo Atual</h3>
+              <p id="loadNow">0.0 kW</p>
+              <span class="kpi-trend down"><i class="fas fa-arrow-down"></i> 5%</span>
+              <div class="kpi-spark"><canvas id="spark-loadNow"></canvas></div>
+            </div>
+          </div>
+          
+          <div class="card kpi modern-kpi">
+            <div class="kpi-icon gradient-blue">
+              <i class="fas fa-plug"></i>
+            </div>
+            <div class="kpi-content">
+              <h3>Energia Hoje</h3>
+              <p id="energyToday">0.0 kWh</p>
+              <span class="kpi-trend up"><i class="fas fa-arrow-up"></i> 8%</span>
+              <div class="kpi-spark"><canvas id="spark-energyToday"></canvas></div>
+            </div>
+          </div>
+          
+          <div class="card kpi modern-kpi">
+            <div class="kpi-icon gradient-teal">
+              <i class="fas fa-dollar-sign"></i>
+            </div>
+            <div class="kpi-content">
+              <h3>Economia Diária</h3>
+              <p id="revenueToday">R$ 0,00</p>
+              <span class="kpi-trend up"><i class="fas fa-arrow-up"></i> 15%</span>
+              <div class="kpi-spark"><canvas id="spark-revenueToday"></canvas></div>
+            </div>
+          </div>
+        </div>
+        <!-- Gráficos e Detalhes -->
+        <div class="grid large">
+          <div class="card modern-chart-card">
+            <div class="card-header-modern">
+              <div style="display:flex; align-items:center; gap:0.7rem;">
+                <span class="chart-icon gradient-blue">
+                  <i class="fas fa-bolt"></i>
+                </span>
+                <h3>Potência Instantânea</h3>
+              </div>
+              <span class="live-indicator">
+                <span class="live-dot"></span>
+                AO VIVO
+              </span>
+            </div>
+            <div class="potencia-valor-container" style="display:flex; flex-direction:column; align-items:center; justify-content:center; margin-top:1.2rem;">
+              <span id="gaugeValue" class="gauge-potencia-value">
+                0.0 kW
+              </span>
+            </div>
+          </div>
+
+          
+          <div class="card modern-chart-card">
+            <div class="card-header-modern">
+              <div style="display:flex; align-items:center; gap:0.7rem;">
+                <span class="chart-icon gradient-green">
+                  <i class="fas fa-chart-area"></i>
+                </span>
+                <h3>Geração vs Consumo</h3>
+              </div>
+            </div>
+            <div class="chart-container">
+              <canvas id="realtimeChart"></canvas>
+            </div>
+          </div>
+          
+          <div class="card modern-details-card">
+            <div class="card-header-modern">
+              <div style="display:flex; align-items:center; gap:0.7rem;">
+                <span class="chart-icon gradient-purple">
+                  <i class="fas fa-tachometer-alt"></i>
+                </span>
+                <h3>Detalhes de Performance</h3>
+              </div>
+            </div>
+            <div class="performance-details">
+              <div class="performance-item modern">
+                <span class="performance-icon gradient-blue">
+                  <i class="fas fa-tachometer-alt"></i>
+                </span>
+                <div class="performance-info">
+                  <span class="performance-label">Eficiência do Sistema</span>
+                  <span class="performance-value" id="efficiency">0%</span>
+                </div>
+              </div>
+              <div class="performance-item modern">
+                <span class="performance-icon gradient-green">
+                  <i class="fas fa-leaf"></i>
+                </span>
+                <div class="performance-info">
+                  <span class="performance-label">CO₂ Evitado Hoje</span>
+                  <span class="performance-value" id="co2Saved">0 kg</span>
+                </div>
+              </div>
+              <div class="performance-item modern">
+                <span class="performance-icon gradient-orange">
+                  <i class="fas fa-solar-panel"></i>
+                </span>
+                <div class="performance-info">
+                  <span class="performance-label">Placas Ativas</span>
+                  <span class="performance-value" id="totalPlacas">0</span>
+                </div>
+              </div>
+              <div class="performance-item modern">
+                <span class="performance-icon gradient-yellow">
+                  <i class="fas fa-bolt"></i>
+                </span>
+                <div class="performance-info">
+                  <span class="performance-label">Potência Total</span>
+                  <span class="performance-value" id="potenciaTotal">0 kWp</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Informações Adicionais -->
+        <div class="grid bottom-charts">
+          <div class="card modern-chart-card">
+            <div class="card-header-modern">
+              <div style="display:flex; align-items:center; gap:0.7rem;">
+                <span class="chart-icon gradient-cyan">
+                  <i class="fas fa-chart-bar"></i>
+                </span>
+                <h3>Produção Semanal</h3>
+              </div>
+            </div>
+            <div class="chart-container">
+              <canvas id="dailyBarChart" width="200" height="80"></canvas>
+            </div>
+          </div>
+          <div class="card modern-chart-card">
+            <div class="card-header-modern">
+              <div style="display:flex; align-items:center; gap:0.7rem;">
+                <span class="chart-icon gradient-orange">
+                  <i class="fas fa-solar-panel"></i>
+                </span>
+                <h3>Status das Placas</h3>
+              </div>
+            </div>
+            <div class="chart-container">
+              <canvas id="placaDoughnut"></canvas>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- MONITORAMENTO EM TEMPO REAL -->
+      <section id="section-monitoramento" hidden>
+        <h2>📡 Monitoramento em Tempo Real</h2>
+        <div class="grid large">
+          <div class="card monitoring-chart-card">
+            <div class="card-header-modern">
+              <h3><i class="fas fa-chart-line"></i> Geração de Energia</h3>
+              <span class="live-indicator">
+                <span class="live-dot"></span>
+                AO VIVO
+              </span>
+            </div>
+            <div class="chart-container">
+              <canvas id="monitoringChart"></canvas>
+            </div>
+          </div>
+          <div class="card monitoring-details-card">
+            <div class="card-header-modern">
+              <h3><i class="fas fa-microchip"></i> Detalhes de Operação</h3>
+            </div>
+            <div class="performance-details">
+              <div class="performance-item modern">
+                <span class="performance-icon gradient-blue">
+                  <i class="fas fa-battery-full"></i>
+                </span>
+                <div class="performance-info">
+                  <span class="performance-label">Tensão DC</span>
+                  <span class="performance-value">320.5 V</span>
+                </div>
+              </div>
+              <div class="performance-item modern">
+                <span class="performance-icon gradient-yellow">
+                  <i class="fas fa-bolt"></i>
+                </span>
+                <div class="performance-info">
+                  <span class="performance-label">Corrente DC</span>
+                  <span class="performance-value">15.8 A</span>
+                </div>
+              </div>
+              <div class="performance-item modern">
+                <span class="performance-icon gradient-green">
+                  <i class="fas fa-plug"></i>
+                </span>
+                <div class="performance-info">
+                  <span class="performance-label">Tensão AC</span>
+                  <span class="performance-value">220.3 V</span>
+                </div>
+              </div>
+              <div class="performance-item modern">
+                <span class="performance-icon gradient-purple">
+                  <i class="fas fa-wave-square"></i>
+                </span>
+                <div class="performance-info">
+                  <span class="performance-label">Frequência</span>
+                  <span class="performance-value">60.0 Hz</span>
+                </div>
+              </div>
+              <div class="performance-item modern">
+                <span class="performance-icon gradient-orange">
+                  <i class="fas fa-thermometer-half"></i>
+                </span>
+                <div class="performance-info">
+                  <span class="performance-label">Temperatura</span>
+                  <span class="performance-value">42.5 °C</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- CLIMA -->
+      <section id="section-clima" hidden>
+        <h2>🌤️ Condições Climáticas</h2>
+        <div class="grid">
+          <div class="card">
+            <h3>Previsão do Tempo</h3>
+            <div class="weather-card">
+              <div class="weather-current">
+                <div class="weather-icon">
+                  <i class="fas fa-sun"></i>
+                </div>
+                <div class="weather-details">
+                  <h4>Hoje</h4>
+                  <div class="temperature">28°C</div>
+                  <div class="condition">Ensolarado</div>
+                </div>
+              </div>
+              <div class="weather-stats">
+                <div class="weather-stat">
+                  <i class="fas fa-wind"></i>
+                  <span>15 km/h</span>
+                </div>
+                <div class="weather-stat">
+                  <i class="fas fa-tint"></i>
+                  <span>45%</span>
+                </div>
+                <div class="weather-stat">
+                  <i class="fas fa-compress-alt"></i>
+                  <span>1015 hPa</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="card">
+            <h3>Radiação Solar</h3>
+            <div class="chart-container">
+              <canvas id="solarRadiationChart"></canvas>
+            </div>
+          </div>
+          
+          <div class="card">
+            <h3>Previsão para Amanhã</h3>
+            <div class="weather-forecast">
+              <div class="forecast-item">
+                <div class="forecast-day">Amanhã</div>
+                <div class="forecast-icon">
+                  <i class="fas fa-cloud-sun"></i>
+                </div>
+                <div class="forecast-temp">26°C</div>
+              </div>
+              <div class="forecast-details">
+                <p>Parcialmente nublado com possibilidade de chuvas isoladas no final da tarde.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- RELATÓRIOS -->
+      <section id="section-relatorios" hidden>
+        <h2>📑 Relatórios</h2>
+        <form id="reportForm">
+          <label>Início: <input type="date" id="dateStart" required></label>
+          <label>Fim: <input type="date" id="dateEnd" required></label>
+          <button type="submit" class="btn-primary">Gerar</button>
+        </form>
+        <div id="reportBox">
+          <table id="reportsTable">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Tipo</th>
+                <th>Descrição</th>
+                <th>Valor</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Relatórios serão inseridos aqui via JS -->
+            </tbody>
+          </table>
+        </div>
+        <button id="exportCsv" class="btn-exportar" disabled><i class="fas fa-file-export"></i> Exportar CSV</button>
+        <button id="clearReports" class="btn-limpar"><i class="fas fa-trash"></i> Limpar</button>
+      </section>
+
+      <!-- PLACAS -->
+      <section id="section-placas" hidden>
+        <h2>🔋 Gerenciamento de Placas</h2>
+        <form id="placaForm" novalidate>
+          <div class="form-row">
+            <label for="placaNome"><i class="fas fa-tag"></i> Nome da placa</label>
+            <input type="text" id="placaNome" name="placaNome" placeholder="Ex.: Placa 04" minlength="2" maxlength="40" required>
+            <small class="field-hint">Use um nome curto e único.</small>
+            <small class="field-error" id="placaNomeError" hidden></small>
+          </div>
+          <div class="form-row">
+            <label for="placaPotencia"><i class="fas fa-bolt"></i> Potência</label>
+            <div class="input-with-unit">
+              <input type="number" id="placaPotencia" name="placaPotencia" placeholder="Ex.: 2.50" step="0.01" min="0.05" max="50" required inputmode="decimal">
+              <span class="unit">kWp</span>
+            </div>
+            <small class="field-hint">Se informar em Watts (ex.: 5000), converteremos para kWp automaticamente.</small>
+            <small class="field-error" id="placaPotenciaError" hidden></small>
+          </div>
+          <div class="form-row">
+            <label for="placaStatus"><i class="fas fa-circle-notch"></i> Status</label>
+            <select id="placaStatus" name="placaStatus" required>
+              <option value="Ativa">Ativa</option>
+              <option value="Inativa">Inativa</option>
+              <option value="Manutenção">Manutenção</option>
+            </select>
+          </div>
+          <button type="submit" id="placaCadastrarBtn" class="btn-primary" disabled>
+            <i class="fas fa-plus"></i> Cadastrar
+          </button>
+          <small id="placaSuccess" class="field-success" hidden>Placa cadastrada com sucesso.</small>
+        </form>
+        <table id="placaTable">
+          <thead>
+            <tr><th>ID Cliente</th><th>Nome</th><th>Potência</th><th>Status</th><th>Ações</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </section>
+
+      <!-- ALERTAS removidos -->
+
+      <!-- USUÁRIOS -->
+      <section id="section-usuarios" hidden>
+        <div class="users-panel">
+          <div class="users-panel-header">
+            <h2><i class="fas fa-users"></i> Usuários</h2>
+            <p class="muted">Gerencie permissões, adicione novos usuários e edite perfis rapidamente.</p>
+          </div>
+
+          <div class="users-toolbar">
+            <div class="users-search">
+              <i class="fas fa-search"></i>
+              <input id="usersSearch" type="search" placeholder="Buscar por nome ou e-mail...">
+            </div>
+            <div class="users-actions">
+              <button id="btnAddUser" class="btn btn-primary" title="Adicionar usuário"><i class="fas fa-user-plus"></i> Adicionar Usuário</button>
+            </div>
+          </div>
+
+          <div id="usersList" class="users-list">
+            <!-- Lista dinâmica de usuários (renderizada via JS) -->
+          </div>
+        </div>
+
+        <!-- Modal / Drawer para adicionar / editar usuário -->
+        <div id="userModal" class="modal user-modal" aria-hidden="true">
+          <div class="modal-panel">
+            <button class="modal-close" id="closeUserModal" aria-label="Fechar">&times;</button>
+            <h3 id="userModalTitle">Adicionar Usuário</h3>
+            <form id="userForm">
+              <label>Nome
+                <input type="text" id="userName" name="name" placeholder="Nome completo" required>
+              </label>
+              <label>Email
+                <input type="email" id="userEmail" name="email" placeholder="email@exemplo.com" required>
+              </label>
+              <label>Permissão
+                <select id="userRole" name="role">
+                  <option value="viewer">Visualizador</option>
+                  <option value="admin">Administrador</option>
+                </select>
+              </label>
+              <div class="form-actions" style="margin-top:12px; display:flex; gap:8px;">
+                <button type="submit" class="btn btn-primary" id="saveUserBtn">Salvar</button>
+                <button type="button" class="btn btn-secondary" id="cancelUserBtn">Cancelar</button>
+              </div>
+            </form>
+
+            <div class="invite-section" style="margin-top:14px;border-top:1px solid rgba(255,255,255,0.03);padding-top:12px;">
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                <button id="inviteBtn" class="btn btn-outline" title="Gerar e enviar convite por e-mail"><i class="fas fa-envelope"></i> Enviar Convite</button>
+                <button id="inviteLinkBtn" class="btn btn-secondary" title="Gerar link de convite sem enviar">Gerar Link</button>
+                <small style="color:rgba(255,255,255,0.6);">(Ao enviar, será gerado um token e um link de convite)</small>
+              </div>
+              <div id="inviteArea" style="margin-top:10px;display:none;gap:8px;align-items:center;">
+                <input id="inviteLink" readonly style="flex:1;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:rgba(255,255,255,0.02);color:#fff;">
+                <button id="inviteCopyBtn" class="btn btn-primary" title="Copiar link">Copiar</button>
+                <button id="inviteEmailBtn" class="btn btn-outline" title="Abrir cliente de email">Abrir e-mail</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CONFIGURAÇÕES -->
+      <section id="section-configuracoes" hidden>
+        <div class="config-header">
+          <h2><i class="fas fa-cogs"></i> Configurações do Sistema</h2>
+          <p class="config-subtitle">Personalize e ajuste os parâmetros do seu sistema SmartSolar</p>
+        </div>
+
+        <!-- Tabs de Configuração -->
+        <div class="config-tabs">
+          <button class="config-tab active" data-config-tab="sistema">
+            <i class="fas fa-solar-panel"></i>
+            <span>Sistema</span>
+          </button>
+          <button class="config-tab" data-config-tab="aparencia">
+            <i class="fas fa-palette"></i>
+            <span>Aparência</span>
+          </button>
+          <button class="config-tab" data-config-tab="notificacoes">
+            <i class="fas fa-bell"></i>
+            <span>Notificações</span>
+          </button>
+          <button class="config-tab" data-config-tab="dados">
+            <i class="fas fa-database"></i>
+            <span>Dados</span>
+          </button>
+        </div>
+
+        <!-- Painel: Sistema -->
+        <div class="config-panel active" data-config-panel="sistema">
+          <div class="config-grid">
+            <div class="config-card modern">
+              <div class="config-card-icon">
+                <i class="fas fa-solar-panel"></i>
+              </div>
+              <div class="config-card-content">
+                <h3>Parâmetros da Placa Solar</h3>
+                <p class="config-description">Defina a capacidade total e tarifa de energia</p>
+                <div class="config-inputs">
+                  <div class="input-group">
+                    <label for="plantCapacity">
+                      <i class="fas fa-battery-full"></i>
+                      Capacidade Total
+                    </label>
+                    <div class="input-with-suffix">
+                      <input type="number" id="plantCapacity" value="8" min="0" step="0.1">
+                      <span class="suffix">kWp</span>
+                    </div>
+                    <small class="input-hint">Potência instalada do sistema fotovoltaico</small>
+                  </div>
+                  <div class="input-group">
+                    <label for="tariff">
+                      <i class="fas fa-dollar-sign"></i>
+                      Tarifa de Energia
+                    </label>
+                    <div class="input-with-suffix">
+                      <input type="number" id="tariff" value="0.95" step="0.01" min="0">
+                      <span class="suffix">R$/kWh</span>
+                    </div>
+                    <small class="input-hint">Valor da tarifa de energia elétrica</small>
+                  </div>
+                  <button id="saveSettings" class="btn-config-save">
+                    <i class="fas fa-check"></i>
+                    Salvar Configurações
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="config-card modern">
+              <div class="config-card-icon warning">
+                <i class="fas fa-exclamation-triangle"></i>
+              </div>
+              <div class="config-card-content">
+                <h3>Limites de Operação</h3>
+                <p class="config-description">Configure alertas de geração mínima e máxima</p>
+                <div class="config-inputs">
+                  <div class="input-group">
+                    <label for="minGen">
+                      <i class="fas fa-arrow-down"></i>
+                      Geração Mínima
+                    </label>
+                    <div class="input-with-suffix">
+                      <input type="number" id="minGen" value="1" min="0" step="0.1">
+                      <span class="suffix">kW</span>
+                    </div>
+                    <small class="input-hint">Alerta quando geração ficar abaixo deste valor</small>
+                  </div>
+                  <div class="input-group">
+                    <label for="maxDelta">
+                      <i class="fas fa-arrow-up"></i>
+                      Variação Máxima
+                    </label>
+                    <div class="input-with-suffix">
+                      <input type="number" id="maxDelta" value="3" min="0" step="0.1">
+                      <span class="suffix">kW</span>
+                    </div>
+                    <small class="input-hint">Alerta quando variação exceder este valor</small>
+                  </div>
+                  <button id="saveThresholds" class="btn-config-save warning">
+                    <i class="fas fa-check"></i>
+                    Salvar Limites
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Painel: Aparência -->
+        <div class="config-panel" data-config-panel="aparencia">
+          <div class="config-grid">
+            <div class="config-card modern">
+              <div class="config-card-icon accent">
+                <i class="fas fa-paint-brush"></i>
+              </div>
+              <div class="config-card-content">
+                <h3>Tema Visual</h3>
+                <p class="config-description">Escolha entre tema claro ou escuro</p>
+                <div class="theme-selector">
+                  <div class="theme-option" data-theme="light">
+                    <div class="theme-preview light">
+                      <div class="preview-bar"></div>
+                      <div class="preview-content">
+                        <div class="preview-card"></div>
+                        <div class="preview-card"></div>
+                      </div>
+                    </div>
+                    <div class="theme-info">
+                      <i class="fas fa-sun"></i>
+                      <span>Tema Claro</span>
+                    </div>
+                  </div>
+                  <div class="theme-option active" data-theme="dark">
+                    <div class="theme-preview dark">
+                      <div class="preview-bar"></div>
+                      <div class="preview-content">
+                        <div class="preview-card"></div>
+                        <div class="preview-card"></div>
+                      </div>
+                    </div>
+                    <div class="theme-info">
+                      <i class="fas fa-moon"></i>
+                      <span>Tema Escuro</span>
+                    </div>
+                  </div>
+                </div>
+                <select id="themeSelect" style="display: none;">
+                  <option value="light">Claro</option>
+                  <option value="dark">Escuro</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="config-card modern">
+              <div class="config-card-icon info">
+                <i class="fas fa-language"></i>
+              </div>
+              <div class="config-card-content">
+                <h3>Idioma do Sistema</h3>
+                <p class="config-description">Selecione o idioma de preferência</p>
+                <div class="config-inputs">
+                  <div class="input-group">
+                    <label for="langSelect">
+                      <i class="fas fa-globe"></i>
+                      Idioma
+                    </label>
+                    <select id="langSelect" class="select-modern">
+                      <option value="pt">🇧🇷 Português (Brasil)</option>
+                      <option value="en">🇺🇸 English (US)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Painel: Notificações -->
+        <div class="config-panel" data-config-panel="notificacoes">
+          <div class="config-grid">
+            <div class="config-card modern">
+              <div class="config-card-icon success">
+                <i class="fas fa-envelope"></i>
+              </div>
+              <div class="config-card-content">
+                <h3>Notificações por E-mail</h3>
+                <p class="config-description">Receba alertas e relatórios no seu e-mail</p>
+                <div class="config-inputs">
+                  <div class="input-group">
+                    <label for="emailNotify">
+                      <i class="fas fa-at"></i>
+                      Endereço de E-mail
+                    </label>
+                    <input type="email" id="emailNotify" placeholder="seu@email.com" class="input-modern">
+                    <small class="input-hint">Usado para enviar notificações e relatórios</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="config-card modern">
+              <div class="config-card-icon success">
+                <i class="fas fa-mobile-alt"></i>
+              </div>
+              <div class="config-card-content">
+                <h3>Notificações por SMS</h3>
+                <p class="config-description">Receba alertas urgentes via mensagem de texto</p>
+                <div class="config-inputs">
+                  <div class="input-group">
+                    <label for="smsNotify">
+                      <i class="fas fa-phone"></i>
+                      Número de Telefone
+                    </label>
+                    <input type="tel" id="smsNotify" placeholder="+55 (11) 99999-9999" class="input-modern">
+                    <small class="input-hint">Formato: +55 (DDD) número</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card de preferências de alertas removido -->
+          </div>
+        </div>
+
+        <!-- Painel: Dados -->
+        <div class="config-panel" data-config-panel="dados">
+          <div class="config-grid">
+            <div class="config-card modern">
+              <div class="config-card-icon info">
+                <i class="fas fa-download"></i>
+              </div>
+              <div class="config-card-content">
+                <h3>Backup de Dados</h3>
+                <p class="config-description">Exportar todas as configurações e dados do sistema</p>
+                <div class="backup-info">
+                  <div class="backup-item">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Configurações do sistema</span>
+                  </div>
+                  <div class="backup-item">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Dados das placas solares</span>
+                  </div>
+                  <div class="backup-item">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Preferências salvas</span>
+                  </div>
+                  <div class="backup-item">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Preferências do usuário</span>
+                  </div>
+                </div>
+                <button id="backupBtn" class="btn-config-action">
+                  <i class="fas fa-download"></i>
+                  Fazer Backup Agora
+                </button>
+              </div>
+            </div>
+
+            <div class="config-card modern">
+              <div class="config-card-icon warning">
+                <i class="fas fa-upload"></i>
+              </div>
+              <div class="config-card-content">
+                <h3>Restaurar Dados</h3>
+                <p class="config-description">Importar backup anteriormente exportado</p>
+                <div class="restore-info">
+                  <div class="restore-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <p><strong>Atenção:</strong> Esta ação substituirá todas as configurações atuais pelos dados do backup.</p>
+                  </div>
+                </div>
+                <button id="restoreBtn" class="btn-config-save warning">
+                  <i class="fas fa-upload"></i>
+                  Restaurar Backup
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="dashboard-footer">
+      <span>SmartSolar © <span id="footerYear"></span> - Todos os direitos reservados</span>
+    </footer>
+  </div>
+
+  <script defer src="src/scripts/api-base.js"></script>
+  <script defer src="src/scripts/remote.js"></script>
+  <script defer src="src/scripts/dashboard.js"></script>
+  <!-- Minimal Ticket FAB (bottom-right) -->
+  <button id="openTicketFab" class="ticket-fab" aria-label="Abrir chamado" title="Abrir chamado">
+    <span id="ticketFabBadge" class="badge" aria-hidden="true"></span>
+    <i class="fas fa-ticket-alt" aria-hidden="true"></i>
+  </button>
+
+    
+  
+</body>
+</html>
