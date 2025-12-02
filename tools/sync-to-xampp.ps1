@@ -1,7 +1,7 @@
 <#
 PowerShell sync script: mirror local workspace to XAMPP htdocs using robocopy.
 Usage:
-  .\sync-to-xampp.ps1 [-Source <sourcePath>] [-Target <targetPath>] [-WhatIf]
+    .\sync-to-xampp.ps1 [-Source <sourcePath>] [-Target <targetPath>] [-WhatIf] [-Watch]
 
 If Target is omitted the script will try common XAMPP locations and default to
 C:\xampp\htdocs\SmartSolar. When -WhatIf is provided the script runs robocopy with /L
@@ -10,17 +10,21 @@ C:\xampp\htdocs\SmartSolar. When -WhatIf is provided the script runs robocopy wi
 Excludes: .git, .vscode, .github, node_modules
 #>
 param(
-    [string]$Source = "C:\Users\lucca\OneDrive\Desktop\SmartSolar",
+    [string]$Source = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path,
     [string]$Target = "",
-    [switch]$WhatIf
+    [switch]$WhatIf,
+    [switch]$Watch
 )
 
 function Find-DefaultTarget {
     $candidates = @(
+        'C:\xampp\htdocs\smart-solar',
+        'C:\xampp\htdocs\Smart-Solar',
         'C:\xampp\htdocs\SmartSolar',
         'C:\xampp\htdocs\smartsolar',
         'C:\xampp\htdocs\SmartSolar-2',
-        'C:\xampp\htdocs\smartsolar-2'
+        'C:\xampp\htdocs\smartsolar-2',
+        'C:\xampp\htdocs\smart-solar-2'
     )
     foreach ($c in $candidates) { if (Test-Path $c) { return $c } }
     return $null
@@ -33,7 +37,7 @@ if (-not (Test-Path $Source)) {
 if (-not $Target -or $Target -eq '') {
     $found = Find-DefaultTarget
     if ($found) { $Target = $found }
-    else { $Target = 'C:\xampp\htdocs\SmartSolar' }
+    else { $Target = 'C:\xampp\htdocs\smart-solar' }
 }
 
 # Ensure target parent exists
@@ -65,23 +69,67 @@ $robocopyArgs += "/XF"; $robocopyArgs += "*.log"; $robocopyArgs += "*.sqlite3"
 
 if ($WhatIf) { $robocopyArgs += "/L"; Write-Host "Running dry-run (list only)" -ForegroundColor Yellow }
 
-$cmd = $robocopy + ' ' + ($robocopyArgs -join ' ')
-Write-Host "Executing: $cmd" -ForegroundColor Green
+function Invoke-Sync {
+    param([string]$srcPath, [string]$dstPath, [switch]$dryRun)
+    $args = @("`"$srcPath`"", "`"$dstPath`"", "/MIR", "/MT:8", "/R:2", "/W:2", "/NFL", "/NDL", "/NJH", "/NJS", "/NP")
+    foreach ($d in $excludeDirs) { $args += "/XD"; $args += "$d" }
+    $args += "/XF"; $args += "*.log"; $args += "*.sqlite3"
+    if ($dryRun) { $args += "/L" }
+    $cmd = 'robocopy ' + ($args -join ' ')
+    Write-Host "Sync: $srcPath -> $dstPath" -ForegroundColor Green
+    # Execute
+    $psi = New-Object System.Diagnostics.ProcessStartInfo
+    $psi.FileName = 'robocopy'
+    $psi.Arguments = ($args -join ' ')
+    $psi.RedirectStandardOutput = $true
+    $psi.RedirectStandardError = $true
+    $psi.UseShellExecute = $false
+    $proc = [System.Diagnostics.Process]::Start($psi)
+    $std = $proc.StandardOutput.ReadToEnd()
+    $err = $proc.StandardError.ReadToEnd()
+    $proc.WaitForExit()
+    if ($std) { Write-Host $std }
+    if ($err) { Write-Error $err }
+    return $proc.ExitCode
+}
 
-# Execute
-$psi = New-Object System.Diagnostics.ProcessStartInfo
-$psi.FileName = 'robocopy'
-$psi.Arguments = ($robocopyArgs -join ' ')
-$psi.RedirectStandardOutput = $true
-$psi.RedirectStandardError = $true
-$psi.UseShellExecute = $false
-$proc = [System.Diagnostics.Process]::Start($psi)
-$std = $proc.StandardOutput.ReadToEnd()
-$err = $proc.StandardError.ReadToEnd()
-$proc.WaitForExit()
+# Initial sync
+$exitCode = Invoke-Sync -srcPath $src -dstPath $dest -dryRun:$WhatIf
+if (-not $Watch) {
+    exit $exitCode
+}
 
-Write-Host $std
-if ($err) { Write-Error $err }
+# Watch mode: mirror on changes with debounce
+Write-Host "Watching for changes in $src ... Press Ctrl+C to stop." -ForegroundColor Cyan
+$fsw = New-Object System.IO.FileSystemWatcher
+$fsw.Path = $src
+$fsw.IncludeSubdirectories = $true
+$fsw.Filter = '*.*'
+$fsw.EnableRaisingEvents = $true
 
-# Return robocopy exit code semantics
-exit $proc.ExitCode
+$pending = $false
+$lastRun = Get-Date
+$debounceMs = 800
+
+$handler = {
+    $script:pending = $true
+}
+
+Register-ObjectEvent $fsw Changed -Action $handler | Out-Null
+Register-ObjectEvent $fsw Created -Action $handler | Out-Null
+Register-ObjectEvent $fsw Deleted -Action $handler | Out-Null
+Register-ObjectEvent $fsw Renamed -Action $handler | Out-Null
+
+try {
+    while ($true) {
+        Start-Sleep -Milliseconds 300
+        if ($pending -and ((Get-Date) - $lastRun).TotalMilliseconds -ge $debounceMs) {
+            $pending = $false
+            $lastRun = Get-Date
+            Invoke-Sync -srcPath $src -dstPath $dest | Out-Null
+        }
+    }
+} finally {
+    Get-EventSubscriber | Where-Object { $_.SourceObject -eq $fsw } | Unregister-Event
+    $fsw.Dispose()
+}

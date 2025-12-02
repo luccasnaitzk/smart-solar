@@ -64,32 +64,7 @@
   <script defer src="src/scripts/api-base.js"></script>
   <script defer src="src/scripts/remote.js"></script>
   <script defer src="src/scripts/auth.js"></script>
-  <script>
-    // Badge simples de status da API/DB
-    (function(){
-      const badge = document.createElement('div');
-      badge.id = 'apiStatusBadge';
-      Object.assign(badge.style, {
-        position:'fixed', right:'12px', bottom:'12px', zIndex:'9999',
-        padding:'8px 12px', borderRadius:'10px', font:'600 12px Poppins,system-ui',
-        color:'#0b1020', background:'#ffd166', boxShadow:'0 4px 18px rgba(0,0,0,.25)', opacity:'0.95'
-      });
-      badge.textContent = 'Checando API...';
-      document.body.appendChild(badge);
-      function set(text, ok){
-        badge.textContent = text;
-        badge.style.background = ok ? '#06d6a0' : '#ef476f';
-        badge.style.color = ok ? '#00100a' : '#fff';
-      }
-      const base = window.API_BASE;
-      if (!base) { set('Offline (sem API)', false); return; }
-      fetch(base + '/ping.php', { method:'GET' })
-        .then(r => r.json()).then(j => {
-          if (j && j.ok) set(j.db ? 'API ON • DB OK' : 'API ON • DB ERRO', !!j.db);
-          else set('API ERRO', false);
-        }).catch(()=> set('API INDISPONÍVEL', false));
-    })();
-  </script>
+  
   <script>
     // Toggle de visibilidade de senha (escopo local da página)
     document.addEventListener('click', function(e){

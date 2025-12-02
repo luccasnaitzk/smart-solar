@@ -123,6 +123,13 @@ document.addEventListener('DOMContentLoaded', function(){
     const u = users[email] || {};
     pvName.textContent = name || (email ? email.split('@')[0] : 'Usuário');
     pvEmail.textContent = email || '-';
+    // Role badge
+    const roleBadge = document.getElementById('pvRoleBadge');
+    const role = (localStorage.getItem('userRole') || 'viewer').toLowerCase();
+    if (roleBadge) {
+      roleBadge.textContent = role === 'admin' ? 'Administrador' : 'Visualizador';
+      roleBadge.classList.toggle('admin', role === 'admin');
+    }
     pvCpf.textContent = u.cpf || '-';
     pvPhone.textContent = u.phone || '-';
     pvCity.textContent = u.city || '-';
@@ -206,7 +213,20 @@ document.addEventListener('DOMContentLoaded', function(){
 
   inputProfileImg?.addEventListener('change', e=>{
     const f = e.target.files[0]; if (!f) return;
-    const r = new FileReader(); r.onload = ev=> previewImg.src = ev.target.result; r.readAsDataURL(f);
+    const spinner = document.getElementById('avatarSpinner');
+    if (spinner) spinner.classList.remove('hidden');
+    const r = new FileReader();
+    r.onload = ev => {
+      const dataUrl = ev.target.result;
+      previewImg.src = dataUrl;
+      const profileImageEl = document.getElementById('profileImage');
+      if (profileImageEl) profileImageEl.src = dataUrl;
+      try { localStorage.setItem('userProfileImg', dataUrl); } catch {}
+      // Atualiza avatar do dashboard se já estiver aberto em outra aba (best effort)
+      try { const hdr = document.getElementById('userMenuAvatar'); if (hdr) hdr.src = dataUrl; } catch {}
+      if (spinner) setTimeout(()=> spinner.classList.add('hidden'), 250);
+    };
+    r.readAsDataURL(f);
   });
 
   // click avatar edit button in view to open edit panel and focus file input
@@ -296,36 +316,36 @@ document.addEventListener('DOMContentLoaded', function(){
     if (!oldPwd || !newPwd || !confirmPwd) { alert('Preencha todos os campos.'); return; }
     if (newPwd.length < 6) { alert('A nova senha deve ter pelo menos 6 caracteres.'); return; }
     if (newPwd !== confirmPwd) { alert('A nova senha e a confirmação não coincidem.'); return; }
-    // Verify stored password locally
-    const users = JSON.parse(localStorage.getItem('users') || '{}');
-    const u = users[email] || {};
-    if (!u.password) {
-      // no local password available — cannot verify old password
-      const proceed = confirm('Não existe senha armazenada localmente para este usuário. Deseja usar recuperação de senha no modal de autenticação?');
-      if (proceed) {
-        if (typeof openForgotModal === 'function') { changePwdModal.classList.add('hidden'); openForgotModal(email); }
-        else alert('Abra o modal de recuperação na tela de autenticação.');
-      }
-      return;
-    }
-    if (u.password !== oldPwd) { alert('Senha antiga incorreta.'); return; }
-
-    // Update local password
-    users[email].password = newPwd;
-    localStorage.setItem('users', JSON.stringify(users));
-
-    // Try server update if API exists (best-effort)
+    // If API is available, prefer server-side verification and update
     if (window.API_BASE) {
       try {
-        await fetch(`${window.API_BASE}/auth/change_password.php`, {
+        const res = await fetch(`${window.API_BASE}/auth/change_password.php`, {
           method: 'POST', headers: {'Content-Type':'application/json'},
           body: JSON.stringify({ email, oldPassword: oldPwd, newPassword: newPwd })
         });
-      } catch (err) { console.warn('remote change password failed', err); }
+        const j = await res.json().catch(()=>({}));
+        if (!res.ok || !j.ok) { throw new Error(j.error || 'Falha ao alterar a senha no servidor.'); }
+        // Update local cache, if exists
+        try { const users = JSON.parse(localStorage.getItem('users') || '{}'); if (users[email]) { users[email].password = newPwd; localStorage.setItem('users', JSON.stringify(users)); } } catch {}
+        alert('Senha alterada com sucesso.');
+        if (changePwdModal) { changePwdModal.classList.add('hidden'); changePwdModal.setAttribute('aria-hidden','true'); }
+        return;
+      } catch (err) {
+        alert(err?.message || 'Não foi possível alterar a senha.');
+        return;
+      }
     }
 
-    alert('Senha alterada com sucesso.');
-    if (changePwdModal) { changePwdModal.classList.add('hidden'); changePwdModal.setAttribute('aria-hidden','true'); }
+    // Fallback local-only if no API
+    try {
+      const users = JSON.parse(localStorage.getItem('users') || '{}');
+      const u = users[email] || {};
+      if (!u.password) { alert('Sem API e sem senha local para validar. Use recuperação de senha.'); return; }
+      if (u.password !== oldPwd) { alert('Senha antiga incorreta.'); return; }
+      users[email].password = newPwd; localStorage.setItem('users', JSON.stringify(users));
+      alert('Senha alterada localmente.');
+      if (changePwdModal) { changePwdModal.classList.add('hidden'); changePwdModal.setAttribute('aria-hidden','true'); }
+    } catch { alert('Não foi possível alterar a senha localmente.'); }
   });
 
   // clicking on a field edit icon opens the edit panel and focuses the corresponding input
@@ -404,4 +424,98 @@ document.addEventListener('DOMContentLoaded', function(){
       // update nothing — dashboard reads from localStorage on load
     } catch {}
   });
+
+  /* ===== Novas Funcionalidades ===== */
+  // Copiar e-mail
+  const copyEmailBtn = document.getElementById('copyEmailBtn');
+  copyEmailBtn?.addEventListener('click', () => {
+    const email = localStorage.getItem('userEmail') || pvEmail.textContent.trim();
+    if (!email || email === '-') return;
+    navigator.clipboard.writeText(email).then(() => {
+      showToast('E-mail copiado');
+      copyEmailBtn.classList.add('copied');
+      setTimeout(()=> copyEmailBtn.classList.remove('copied'), 1400);
+    }).catch(()=> alert('Não foi possível copiar.'));
+  });
+
+  // Contadores CPF / Telefone
+  const cpfCounter = document.getElementById('cpfCounter');
+  const phoneCounter = document.getElementById('phoneCounter');
+  function updateCpfCounter(){
+    const v = (inputCpf.value||'').replace(/\D/g,'');
+    if (cpfCounter) cpfCounter.textContent = `${v.length}/11`;
+    inputCpf.classList.toggle('invalid', v.length>0 && v.length!==11);
+  }
+  function updatePhoneCounter(){
+    const v = (inputPhone.value||'').replace(/\D/g,'');
+    if (phoneCounter) phoneCounter.textContent = v.length.toString();
+    inputPhone.classList.toggle('invalid', v.length>0 && v.length<10);
+  }
+  inputCpf?.addEventListener('input', updateCpfCounter);
+  inputPhone?.addEventListener('input', updatePhoneCounter);
+  updateCpfCounter(); updatePhoneCounter();
+
+  // Força da senha
+  const newPwdInput = document.getElementById('newPassword');
+  const strengthWrap = document.getElementById('passwordStrength');
+  const strengthLabel = document.getElementById('passwordStrengthLabel');
+  function passwordScore(p){ let s=0; if(!p) return 0; if(p.length>=6) s++; if(/[A-Z]/.test(p)) s++; if(/[0-9]/.test(p)) s++; if(/[^A-Za-z0-9]/.test(p)) s++; return s; }
+  function updateStrength(){
+    const v = newPwdInput?.value || '';
+    const sc = passwordScore(v);
+    const lvl = Math.min(3, Math.max(0, sc-1));
+    if (strengthWrap) strengthWrap.dataset.level = lvl;
+    const labels = ['fraca','média','boa','forte'];
+    if (strengthLabel) strengthLabel.textContent = 'Força: ' + labels[lvl];
+    if (strengthWrap) strengthWrap.setAttribute('aria-hidden', v ? 'false' : 'true');
+  }
+  newPwdInput?.addEventListener('input', updateStrength); updateStrength();
+
+  // Edição inline (Nome / Email)
+  function makeInlineEditable(el, field){
+    if(!el) return;
+    el.addEventListener('dblclick', ()=>{
+      const current = field==='name'? (localStorage.getItem('userName')||pvName.textContent) : (localStorage.getItem('userEmail')||pvEmail.textContent.trim());
+      const holder = document.createElement('div'); holder.className='inline-edit-wrapper';
+      const input = document.createElement('input'); input.className='inline-edit-input'; input.value=current; input.autocomplete='off';
+      const actions = document.createElement('div'); actions.className='inline-edit-actions';
+      const bSave=document.createElement('button'); bSave.type='button'; bSave.className='inline-edit-save'; bSave.textContent='Salvar';
+      const bCancel=document.createElement('button'); bCancel.type='button'; bCancel.className='inline-edit-cancel'; bCancel.textContent='Cancelar';
+      actions.appendChild(bSave); actions.appendChild(bCancel);
+      const originalEl = el;
+      el.replaceWith(holder); holder.appendChild(input); holder.appendChild(actions); input.focus();
+      function revert(){ holder.replaceWith(originalEl); }
+      bCancel.addEventListener('click', revert);
+      bSave.addEventListener('click', ()=>{
+        const val = input.value.trim(); if(!val){ revert(); return; }
+        if(field==='name'){ localStorage.setItem('userName', val); pvName.childNodes[0].nodeValue = val + ' '; }
+        if(field==='email'){ localStorage.setItem('userEmail', val); pvEmail.childNodes[0].nodeValue = val + ' '; }
+        revert(); loadFromLocal(); showToast('Atualizado.');
+      });
+    });
+  }
+  makeInlineEditable(document.getElementById('pvName'), 'name');
+  makeInlineEditable(document.getElementById('pvEmail'), 'email');
+
+  // Acessibilidade toast: foco após exibir
+  const toastEl = document.getElementById('profileToast');
+  const originalShowToast = showToast;
+  showToast = function(msg, timeout=3000){
+    originalShowToast(msg, timeout);
+    if (toastEl) setTimeout(()=>{ try { toastEl.focus({preventScroll:true}); } catch{} }, 80);
+  };
+
+  // Toggle olho para campos de senha no modal de alteração
+  document.querySelectorAll('.toggle-password').forEach(btn => {
+    if (btn._bound) return; btn._bound = true;
+    btn.addEventListener('click', () => {
+      const targetId = btn.dataset.target; const inp = document.getElementById(targetId);
+      if (!inp) return;
+      const isHidden = inp.type === 'password';
+      inp.type = isHidden ? 'text' : 'password';
+      const icon = btn.querySelector('i');
+      if (icon) icon.className = 'fas ' + (isHidden ? 'fa-eye-slash' : 'fa-eye');
+    });
+  });
+
 });

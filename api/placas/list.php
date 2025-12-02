@@ -8,9 +8,21 @@ try {
   $stmt = $pdo->prepare('SELECT id FROM users WHERE email = ?');
   $stmt->execute([$email]);
   $u = $stmt->fetch();
-  if (!$u) send_json(['placas'=>[]]);
-  $stmt = $pdo->prepare('SELECT nome, potencia, status FROM placas WHERE user_id = ? ORDER BY id');
-  $stmt->execute([$u['id']]);
+    if (!$u) send_json(['placas'=>[]]);
+    // Placas do próprio usuário + compartilhadas por outros (owner_id em user_shares)
+    $sql = 'SELECT p.user_id AS owner_id, u.name AS owner_name, u.email AS owner_email, p.nome, p.potencia, p.status
+      FROM placas p
+      INNER JOIN users u ON u.id = p.user_id
+      WHERE p.user_id = ?
+      UNION ALL
+      SELECT p.user_id AS owner_id, u.name AS owner_name, u.email AS owner_email, p.nome, p.potencia, p.status
+      FROM placas p
+      INNER JOIN user_shares s ON s.owner_id = p.user_id
+      INNER JOIN users u ON u.id = p.user_id
+      WHERE s.viewer_id = ?
+      ORDER BY nome';
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([$u['id'], $u['id']]);
   $rows = $stmt->fetchAll();
   send_json(['placas'=>$rows]);
 } catch (Exception $e) {

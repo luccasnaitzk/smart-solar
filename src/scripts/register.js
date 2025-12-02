@@ -123,12 +123,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            // Verificar se email já existe (armazenamento local)
+            // Carrega base local (não bloqueia mais por existir em localStorage)
             const users = getUsersObj();
-            if (users[email]) {
-                showMessage('Este e-mail já está cadastrado. Faça login ou use outro e-mail.', 'error');
-                return;
-            }
             
             // Feedback visual: carregando
             const submitBtn = registerForm.querySelector('.btn-full');
@@ -153,10 +149,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 if (useRemote) {
                     try {
+                        // Captura token de convite (se veio na URL)
+                        const url = new URL(window.location.href);
+                        const invite = url.searchParams.get('invite') || '';
                         const res = await fetch(`${window.API_BASE}/auth/register.php`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ name, email, password, cpf: cpf || '', phone: phone || '', city: city || '', state: state || '' })
+                            body: JSON.stringify({ name, email, password, cpf: cpf || '', phone: phone || '', city: city || '', state: state || '', invite })
                         });
 
                         if (res.status === 409) {
@@ -213,7 +212,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
 
-                // Local fallback registration (keeps previous behavior)
+                // Local fallback registration (keeps previous behavior). Se já existir no local, sobrescreve dados.
                 setTimeout(() => {
                     localStorage.setItem('userLoggedIn', 'true');
                     localStorage.setItem('userEmail', email);

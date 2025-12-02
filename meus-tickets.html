@@ -404,40 +404,54 @@
   </div>
 
   <script defer src="src/scripts/script.js"></script>
+  <script defer src="src/scripts/api-base.js"></script>
+  <script defer src="src/scripts/remote.js"></script>
   <script defer src="src/scripts/ticket.js"></script>
   <script>
-    // Populate table from localStorage tickets
-    document.addEventListener('DOMContentLoaded', function(){
+    // Popula a tabela com tickets do backend quando disponível; fallback para localStorage
+    document.addEventListener('DOMContentLoaded', async function(){
       const tbody = document.querySelector('#ticketsTable tbody');
+      const render = (arr) => {
+        if (!arr || !arr.length) {
+          tbody.innerHTML = '<tr><td colspan="6" class="empty">Nenhum ticket encontrado. Crie seu primeiro chamado!</td></tr>';
+          return;
+        }
+        tbody.innerHTML = arr.slice().reverse().map(t => {
+          const date = new Date(t.createdAt || t.created_at || Date.now());
+          const d = date.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric' });
+          const h = date.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+          const statusClass = (t.status || 'aberto') === 'aberto' ? 'aberto' : 'fechado';
+          const statusText = (t.status || 'aberto') === 'aberto' ? 'Aberto' : 'Fechado';
+          const nome = t.name || '';
+          const email = t.email || '';
+          const categoria = t.category || t.tipo || '';
+          const code = t.code || t.protocolo || '';
+          const categoryMap = { 'orcamento':'Orçamento','duvida':'Dúvida','suporte':'Suporte Técnico' };
+          const categoryDisplay = categoryMap[categoria] || categoria;
+          return `<tr>
+            <td><strong>${code}</strong></td>
+            <td>${nome}</td>
+            <td>${email}</td>
+            <td>${categoryDisplay}</td>
+            <td><small>${d} às ${h}</small></td>
+            <td><span class="badge ${statusClass}">${statusText}</span></td>
+          </tr>`;
+        }).join('');
+      };
+      try {
+        // Aguarda remote.js determinar API_BASE
+        const wait = () => new Promise(r=>{ const s=Date.now(); (function t(){ if (window.API_READY===true||Date.now()-s>1200) return r(); setTimeout(t,60); })(); });
+        await wait();
+        const email = localStorage.getItem('userEmail') || '';
+        if (window.SmartSolarStorage?.isRemote() && email) {
+          const res = await window.SmartSolarStorage.listTickets(email);
+          render(res.tickets || []);
+          return;
+        }
+      } catch {}
+      // fallback local
       const data = JSON.parse(localStorage.getItem('tickets') || '[]');
-      if (!data.length) {
-        tbody.innerHTML = '<tr><td colspan="6" class="empty">Nenhum ticket encontrado. Crie seu primeiro chamado!</td></tr>';
-        return;
-      }
-      tbody.innerHTML = data.slice().reverse().map(t => {
-        const date = new Date(t.createdAt);
-        const d = date.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric' });
-        const h = date.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
-        const statusClass = t.status === 'aberto' ? 'aberto' : 'fechado';
-        const statusText = t.status === 'aberto' ? 'Aberto' : 'Fechado';
-        
-        // Formata categoria
-        const categoryMap = {
-          'orcamento': 'Orçamento',
-          'duvida': 'Dúvida',
-          'suporte': 'Suporte Técnico'
-        };
-        const categoryDisplay = categoryMap[t.category] || t.category;
-        
-        return `<tr>
-          <td><strong>${t.code}</strong></td>
-          <td>${t.name}</td>
-          <td>${t.email}</td>
-          <td>${categoryDisplay}</td>
-          <td><small>${d} às ${h}</small></td>
-          <td><span class="badge ${statusClass}">${statusText}</span></td>
-        </tr>`;
-      }).join('');
+      render(data);
     });
   </script>
 </body>

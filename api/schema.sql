@@ -34,17 +34,8 @@ CREATE TABLE IF NOT EXISTS tickets (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE IF NOT EXISTS alerts (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  user_id INT NOT NULL,
-  data VARCHAR(40) NOT NULL,
-  tipo VARCHAR(60) NOT NULL,
-  descricao VARCHAR(255) NOT NULL,
-  nivel VARCHAR(40) NOT NULL,
-  lido TINYINT(1) DEFAULT 0,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- ALERTS table removida (não utilizada). Drop para bases existentes.
+DROP TABLE IF EXISTS alerts;
 
 -- User management (roles/perfis) — controla quem é admin/visualizador no app
 CREATE TABLE IF NOT EXISTS user_roles (
@@ -67,3 +58,56 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS state VARCHAR(8) DEFAULT '';
 -- Password reset support
 ALTER TABLE users ADD COLUMN IF NOT EXISTS password_reset_token VARCHAR(128) DEFAULT NULL;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS password_reset_expires DATETIME DEFAULT NULL;
+
+-- Relatórios gerados pelo usuário (armazenamento de conteúdo e metadados)
+CREATE TABLE IF NOT EXISTS relatorios (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  titulo VARCHAR(200) NOT NULL,
+  tipo VARCHAR(60) NOT NULL DEFAULT 'geral',
+  status ENUM('rascunho','gerado','enviado','arquivado') NOT NULL DEFAULT 'rascunho',
+  periodo_inicio DATE DEFAULT NULL,
+  periodo_fim DATE DEFAULT NULL,
+  corpo LONGTEXT NULL,
+  dados_json LONGTEXT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Tickets públicos (homepage) sem vínculo ao usuário logado
+CREATE TABLE IF NOT EXISTS public_tickets (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  nome VARCHAR(120) NOT NULL,
+  email VARCHAR(160) NOT NULL,
+  categoria VARCHAR(60) NOT NULL,
+  mensagem TEXT NOT NULL,
+  protocolo VARCHAR(40) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_public_tickets_email (email)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Convites e compartilhamento de placas
+CREATE TABLE IF NOT EXISTS invites (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  token VARCHAR(64) NOT NULL UNIQUE,
+  owner_id INT NOT NULL,
+  role ENUM('viewer','admin') NOT NULL DEFAULT 'viewer',
+  expires_at DATETIME DEFAULT NULL,
+  used_by INT DEFAULT NULL,
+  used_at DATETIME DEFAULT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (used_by) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS user_shares (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  owner_id INT NOT NULL,
+  viewer_id INT NOT NULL,
+  role ENUM('viewer','admin') NOT NULL DEFAULT 'viewer',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_user_shares (owner_id, viewer_id),
+  FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (viewer_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

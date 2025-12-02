@@ -7,11 +7,15 @@ $placas = $body['placas'];
 if (!is_array($placas)) send_json(['error'=>'placas inválido'], 400);
 try {
   $pdo = db();
-  $pdo->beginTransaction();
-  $stmt = $pdo->prepare('SELECT id FROM users WHERE email = ?');
+  // Verifica papel do usuário: somente 'admin' pode editar/sincronizar placas
+  $stmt = $pdo->prepare('SELECT u.id, COALESCE(r.role, "viewer") AS role FROM users u LEFT JOIN user_roles r ON r.user_id = u.id WHERE u.email = ?');
   $stmt->execute([$email]);
   $u = $stmt->fetch();
   if (!$u) send_json(['error'=>'Usuário não encontrado'], 404);
+  if (strtolower($u['role']) !== 'admin') {
+    send_json(['error'=>'Permissão negada: apenas administradores podem modificar placas'], 403);
+  }
+  $pdo->beginTransaction();
   $uid = $u['id'];
   // Limpa e re-insere (simples)
   $pdo->prepare('DELETE FROM placas WHERE user_id = ?')->execute([$uid]);

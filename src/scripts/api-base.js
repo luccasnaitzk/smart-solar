@@ -1,4 +1,2 @@
-// Força o uso da API do XAMPP em localhost e ativa modo remoto
-// Ajuste se necessário o caminho base
-window.API_BASE = 'http://localhost/smartsolar/api';
+// Habilita modo remoto e deixa a auto-detecção em remote.js definir API_BASE
 try { localStorage.setItem('useRemoteAPI','true'); } catch {}

@@ -156,6 +156,52 @@ body{
 	gap:22px; 
 	align-items:flex-start; 
 }
+.role-badge{
+	display:inline-flex;
+	align-items:center;
+	gap:4px;
+	background:linear-gradient(135deg,var(--accent) 0%, var(--accent-alt) 100%);
+	color:#fff;
+	font-size:0.65rem;
+	padding:4px 8px;
+	border-radius:999px;
+	letter-spacing:0.5px;
+	font-weight:600;
+	vertical-align:middle;
+	box-shadow:0 4px 12px rgba(0,0,0,0.4);
+	text-transform:uppercase;
+}
+.copy-email-btn{
+	background:transparent;
+	color:var(--accent);
+	border:none;
+	cursor:pointer;
+	padding:4px 6px;
+	margin-left:6px;
+	border-radius:6px;
+	transition:background .25s ease, transform .2s ease;
+}
+.copy-email-btn:hover{background:rgba(0,194,168,0.12);transform:translateY(-2px)}
+.copy-email-btn:active{transform:translateY(0) scale(.95)}
+.char-counter{font-size:0.65rem;font-weight:600;color:var(--muted);margin-left:4px}
+.password-strength{display:flex;align-items:center;gap:10px;margin-top:6px}
+.password-strength .bar{flex:1;height:8px;border-radius:6px;background:linear-gradient(90deg,#ff3d3d 0%,#ffcc33 33%,#4caf50 66%,#2196f3 100%);filter:grayscale(65%);position:relative;overflow:hidden}
+.password-strength[data-score="1"] .bar{filter:grayscale(40%)}
+.password-strength[data-score="2"] .bar{filter:grayscale(0%)}
+.password-strength .bar::after{content:'';position:absolute;top:0;left:0;height:100%;width:0;background:rgba(0,0,0,0.35)}
+.password-strength[data-level="0"] .bar::after{width:75%}
+.password-strength[data-level="1"] .bar::after{width:50%}
+.password-strength[data-level="2"] .bar::after{width:25%}
+.password-strength[data-level="3"] .bar::after{width:0}
+.password-strength .label{font-size:0.7rem;font-weight:600;color:#cfe6ff}
+.avatar-spinner{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.55);backdrop-filter:blur(4px);border-radius:50%;color:#fff;font-size:1.2rem;box-shadow:0 0 0 2px rgba(0,194,168,0.4) inset;}
+.avatar-spinner.hidden{display:none}
+.inline-edit-input{background:rgba(255,255,255,0.08);border:1px solid var(--accent);border-radius:8px;padding:4px 8px;font-size:1rem;color:#fff;width:100%;}
+.inline-edit-actions{display:flex;gap:6px;margin-top:6px}
+.inline-edit-save,.inline-edit-cancel{background:var(--accent);border:none;color:#082229;padding:4px 10px;border-radius:6px;font-size:0.7rem;font-weight:700;cursor:pointer}
+.inline-edit-cancel{background:#444;color:#fff}
+.inline-edit-save:hover{filter:brightness(1.1)}
+.inline-edit-cancel:hover{filter:brightness(1.2)}
 .avatar img, .avatar-edit img, #profileImage, #previewImg{ 
 	width:140px; 
 	height:140px; 

@@ -618,3 +618,178 @@ body[data-theme="dark"] .toggle-pass:hover { background: #252746; }
     padding: 10px;
   }
 }
+
+/* Forgot Password Modal (fp-*) */
+.fp-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: fpFadeIn .2s ease-out;
+}
+
+@keyframes fpFadeIn { from { opacity: 0 } to { opacity: 1 } }
+
+.fp-card {
+  background: #1b1d2e;
+  color: #eaf1ff;
+  border-radius: 16px;
+  padding: 18px;
+  min-width: 320px;
+  max-width: 92vw;
+  width: 440px;
+  border: 1px solid #2a2d45;
+  box-shadow: 0 18px 44px rgba(0,0,0,.45);
+  transform: translateY(10px);
+  animation: fpSlideUp .25s ease-out forwards;
+}
+
+@keyframes fpSlideUp { to { transform: translateY(0) } }
+
+.fp-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.fp-header h3 { margin: 0; color: #9ed0ff; font-weight: 800; display: flex; align-items: center; gap: 10px; }
+.fp-close { background: transparent !important; border: 1px solid #374063 !important; color: #cbd6ff !important; border-radius: 8px; padding: 6px 10px; }
+
+.fp-step { margin-top: 6px; }
+.fp-label { display: block; font-weight: 700; color: #bfe3ff; margin-bottom: 6px; }
+.fp-input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #2f3453; background: #121327; color: #fff; }
+.fp-input:focus { outline: none; border-color: #3b76ff; box-shadow: 0 0 0 3px rgba(59,118,255,0.15); }
+.fp-hint { display: block; margin-top: 8px; color: #9fb2d6; opacity: .95; }
+
+.fp-actions { display: flex; gap: 10px; margin-top: 12px; }
+.fp-actions.end { justify-content: flex-end; }
+.fp-actions.between { justify-content: space-between; align-items: center; }
+.fp-actions-right { display: flex; gap: 10px; }
+
+.fp-step2-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.fp-code { letter-spacing: 4px; text-align: center; font-weight: 700; }
+.fp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+@media (max-width: 560px) { .fp-grid { grid-template-columns: 1fr; } }
+
+.fp-message { padding: 10px 12px; margin: 10px 0; border-radius: 8px; border: 1px solid transparent; font-weight: 600; }
+.fp-message.success { background: rgba(76,175,80,0.12); border-color: rgba(76,175,80,0.35); color: #baf7c1; }
+.fp-message.error { background: rgba(244,67,54,0.12); border-color: rgba(244,67,54,0.35); color: #ffb4b4; }
+
+.fp-resend { min-width: 140px; }
+.fp-resend:disabled { opacity: .7; cursor: not-allowed; }
+
+/* ------ NOVO ESTILO MODERNO PARA RECUPERAR ACESSO ------ */
+.fp-card {
+  background: linear-gradient(145deg,#141626 0%,#1e2240 55%,#111423 100%);
+  border: 1px solid rgba(255,255,255,0.06);
+  position: relative;
+}
+.fp-header-right { display:flex; align-items:center; gap:12px; }
+.fp-progress { position:relative; width:110px; height:6px; background:rgba(255,255,255,0.12); border-radius:6px; overflow:hidden; }
+.fp-progress-bar { position:absolute; inset:0; background:linear-gradient(90deg,#00d4ff,#3a0ca3); box-shadow:0 0 6px #00d4ff88; transition:width .45s ease; }
+.fp-btn-big { padding:12px 18px; font-size:.92rem; display:inline-flex; align-items:center; gap:8px; }
+.fp-btn-small { padding:8px 12px; font-size:.75rem; display:inline-flex; align-items:center; gap:6px; }
+.fp-btn-ghost { display:inline-flex; align-items:center; gap:6px; }
+.fp-actions-main { margin-top:18px; }
+.fp-actions-step2 { margin-top:22px; }
+.fp-card .btn-primary i, .fp-card .btn-secondary i, .fp-card .btn-tertiary i { font-size:0.95em; }
+.fp-card .btn-primary span, .fp-card .btn-secondary span, .fp-card .btn-tertiary span { pointer-events:none; }
+.fp-card .btn-primary, .fp-card .btn-secondary, .fp-card .btn-tertiary { border-radius:10px; }
+.fp-card .btn-primary:focus-visible, .fp-card #fpSend:focus-visible, .fp-card #fpReset:focus-visible { outline:none; box-shadow:0 0 0 3px rgba(0,212,255,0.4); }
+.fp-card .btn-secondary:focus-visible, .fp-card .fp-close:focus-visible { outline:none; box-shadow:0 0 0 3px rgba(74,121,255,0.4); }
+.fp-card .btn-tertiary:focus-visible { outline:none; box-shadow:0 0 0 3px rgba(255,255,255,0.25); }
+.fp-input::placeholder { color:#6e7fa8; opacity:.85; }
+.fp-card::before {
+  content: ""; position: absolute; inset: 0; pointer-events:none;
+  background: radial-gradient(circle at 18% 12%, rgba(0,212,255,0.18), transparent 60%),
+              radial-gradient(circle at 82% 88%, rgba(255,184,107,0.15), transparent 65%);
+  opacity: .55; mix-blend-mode: overlay; filter: blur(22px);
+}
+.fp-header {
+  background: linear-gradient(135deg,#00d4ff 0%,#3a0ca3 70%);
+  padding: 14px 16px; border-radius: 12px; margin:-4px -4px 12px; position:relative;
+  box-shadow: 0 10px 28px -8px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.08);
+}
+.fp-header h3 { color:#fff !important; text-shadow:0 2px 6px rgba(0,0,0,.4); font-size:1.05rem; }
+.fp-header h3 i { color:#fff; text-shadow:none; }
+.fp-header::after { content:""; position:absolute; left:18px; right:18px; bottom:4px; height:3px; border-radius:8px; background: linear-gradient(90deg,#ffffff55,#ffffff00); }
+
+/* Botões dentro do modal de recuperação */
+.fp-card .btn-primary,
+.fp-card #fpSend,
+.fp-card #fpReset {
+  background: linear-gradient(135deg,#00d4ff 0%,#3a0ca3 90%);
+  border: 1px solid rgba(255,255,255,0.18);
+  color:#fff; font-weight:600; letter-spacing:.3px;
+  box-shadow: 0 8px 20px -4px rgba(0,212,255,0.35);
+  transition: background .25s ease, transform .25s ease, box-shadow .25s ease;
+}
+.fp-card .btn-primary:hover,
+.fp-card #fpSend:hover,
+.fp-card #fpReset:hover { transform: translateY(-2px); box-shadow:0 12px 28px -6px rgba(0,212,255,0.45); filter:saturate(1.15); }
+.fp-card .btn-primary:active,
+.fp-card #fpSend:active,
+.fp-card #fpReset:active { transform: translateY(0); box-shadow:0 6px 16px -4px rgba(0,212,255,0.45); }
+
+.fp-card .btn-tertiary,
+.fp-card #fpCancel1,
+.fp-card #fpCancel2 {
+  background: rgba(255,255,255,0.06);
+  border:1px solid rgba(255,255,255,0.12);
+  color:#cbd6ff; font-weight:600; backdrop-filter: blur(6px);
+  transition: background .25s ease, color .25s ease, transform .25s ease;
+}
+.fp-card .btn-tertiary:hover,
+.fp-card #fpCancel1:hover,
+.fp-card #fpCancel2:hover { background: rgba(255,255,255,0.12); color:#fff; transform: translateY(-2px); }
+.fp-card .btn-tertiary:active,
+.fp-card #fpCancel1:active,
+.fp-card #fpCancel2:active { transform: translateY(0); }
+
+.fp-card .btn-secondary,
+.fp-card #fpBack,
+.fp-card #fpResend,
+.fp-card .fp-close {
+  background: linear-gradient(135deg,#232845,#1a1e34);
+  border: 1px solid #374063;
+  color:#bfe3ff; font-weight:600;
+  transition: background .25s ease, transform .25s ease, box-shadow .25s ease;
+}
+.fp-card .btn-secondary:hover,
+.fp-card #fpBack:hover,
+.fp-card #fpResend:hover,
+.fp-card .fp-close:hover { background: linear-gradient(135deg,#2d3458,#232845); color:#fff; transform: translateY(-2px); }
+.fp-card .btn-secondary:active,
+.fp-card #fpBack:active,
+.fp-card #fpResend:active,
+.fp-card .fp-close:active { transform: translateY(0); }
+
+/* Inputs refinados */
+.fp-input {
+  background: linear-gradient(160deg,#121327,#181a2f 60%,#121327);
+  border:1px solid #2f3453;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.35) inset, 0 6px 16px -6px rgba(0,0,0,.55);
+  transition: border-color .25s ease, box-shadow .25s ease, background .4s ease;
+}
+.fp-input:focus { background: linear-gradient(160deg,#14152b,#1e2140 60%,#14152b); border-color:#4a79ff; box-shadow:0 0 0 3px rgba(74,121,255,0.35), 0 4px 16px -6px rgba(74,121,255,.65); }
+
+/* Código destaque */
+.fp-code { font-size:1.1rem; background: linear-gradient(145deg,#101222,#181b30); }
+.fp-code:focus { border-color:#00d4ff; box-shadow:0 0 0 3px rgba(0,212,255,.35); }
+
+/* Mensagens dentro do fluxo de recuperação */
+.fp-message { backdrop-filter: blur(4px); }
+.fp-message.success { background: linear-gradient(145deg,rgba(76,175,80,0.25),rgba(76,175,80,0.10)); }
+.fp-message.error { background: linear-gradient(145deg,rgba(244,67,54,0.32),rgba(244,67,54,0.14)); }
+
+/* Layout melhorias */
+.fp-actions { gap:12px; }
+.fp-actions.end { margin-top:18px; }
+.fp-actions.between { margin-top:20px; }
+.fp-grid label .fp-input { margin-top:6px; }
+
+@media (max-width:560px){
+  .fp-card { width: 94vw; padding:16px; }
+  .fp-header { margin:-6px -6px 14px; }
+  .fp-actions.between { flex-direction: column; align-items: stretch; }
+  .fp-actions-right { width:100%; justify-content: stretch; }
+  .fp-actions-right button { flex:1; }
+}

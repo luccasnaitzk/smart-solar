@@ -59,109 +59,115 @@
     SS.simHistory.dailyAccum = 0;
   }
 
+  // Garante que exista estado interno por placa (voltado à simulação)
+  function ensurePanelState() {
+    try {
+      SS.panelState = SS.panelState || {};
+      (SS.placas || []).forEach(p => {
+        const key = p.nome || (`placa_${Math.random().toString(36).slice(2,8)}`);
+        if (!SS.panelState[key]) {
+          SS.panelState[key] = {
+            powerKw: 0,
+            prevPowerKw: 0,
+            genKwh: 0,
+            idealKwh: 0,
+            actualKwh: 0,
+            totalTicks: 0,
+            activeTicks: 0,
+            tempC: 25,
+            eff: 0.9,
+            loadKw: 0,
+            lastStatus: null
+          };
+        }
+      });
+      // Remove estados de placas que não existem mais
+      Object.keys(SS.panelState).forEach(k => {
+        if (!(SS.placas || []).some(p => (p.nome || '') === k)) delete SS.panelState[k];
+      });
+    } catch (e) { console.warn('[Dashboard] ensurePanelState falhou', e); }
+  }
+
   /* --------------------- UTIL --------------------- */
   function $(id) { return document.getElementById(id); }
   // ---------- Proteção de acesso: exige login válido no backend ----------
   async function requireBackendAuth() {
     const email = localStorage.getItem('userEmail');
-    if (!email) {
-      location.href = 'auth.html'; return false;
-    }
+    if (!email) { console.warn('[Dashboard] Sem userEmail -> redirecionando para auth'); location.href = 'auth.html'; return false; }
     // Aguarda remote.js sinalizar pronto (até 1.2s)
-    const wait = () => new Promise(r=>{
-      const s=Date.now(); (function t(){ if (window.API_READY===true||Date.now()-s>1200) return r(); setTimeout(t,60); })();
-    });
+    const wait = () => new Promise(r=>{ const s=Date.now(); (function t(){ if (window.API_READY===true||Date.now()-s>1200) return r(); setTimeout(t,60); })(); });
     await wait();
-    if (!window.API_BASE) { location.href = 'auth.html'; return false; }
+    // Modo offline: se API não detectada, segue em frente usando dados locais
+    if (!window.API_BASE) { console.info('[Dashboard] API não detectada – entrando em modo offline'); SS.userRole = (localStorage.getItem('userRole')||'viewer'); return true; }
     try {
-      const res = await fetch(window.API_BASE + '/users/get.php', {
-        method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email })
-      });
+      const res = await fetch(window.API_BASE + '/users/get.php', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email }) });
       if (!res.ok) throw new Error('auth');
       const j = await res.json();
-      if (!j || !j.user) { location.href = 'auth.html'; return false; }
-      // Guarda o ID do cliente (user_id) para uso nas listas de placas e afins
+      if (!j || !j.user) { console.warn('[Dashboard] Usuário não encontrado no backend – permanecendo offline'); return true; }
       try {
         SS.userId = j.user.id;
         localStorage.setItem('userId', String(j.user.id));
+        const backendRole = (j.user.role || 'viewer').toLowerCase();
+        const stored = (localStorage.getItem('userRole')||'').toLowerCase();
+        // Regra solicitada: nunca rebaixar para viewer se já é admin local (ex: recém cadastrado)
+        SS.userRole = stored === 'admin' && backendRole !== 'admin' ? 'admin' : backendRole;
+        // Se backendRole vier viewer mas acabamos de promover, opcionalmente poderíamos chamar API para ajustar.
+        localStorage.setItem('userRole', SS.userRole);
       } catch {}
       return true;
-    } catch { location.href = 'auth.html'; return false; }
+    } catch (e) {
+      console.warn('[Dashboard] Erro ao validar no backend – usando modo offline:', e.message);
+      SS.userRole = (localStorage.getItem('userRole')||'viewer');
+      return true;
+    }
   }
   function safeNumber(v, d = 0) { const n = parseFloat(v); return isNaN(n) ? d : n; }
   function clamp01(x) { return Math.max(0, Math.min(1, x)); }
   function rand(a, b) { return a + Math.random() * (b - a); }
 
   /* --------------------- ESTADO --------------------- */
-  function initPlacasDefault() {
-    // Do not auto-seed placas for new users.
-    // Previously the app created 3 sample placas here. That caused new users to
-    // have pre-populated panels on first login. We now keep the list empty so
-    // users can add their own placas and the simulation will start from zero.
-    if (!SS.placas.length) {
-      SS.placas = [];
-    }
-  }
-  function ensurePanelState() {
-    SS.placas.forEach(p => {
-      if (!SS.panelState[p.nome]) {
-        SS.panelState[p.nome] = {
-          eff: 0.85 + Math.random() * 0.1,
-            tempC: 28 + Math.random() * 6,
-            genKwh: 0,
-            powerKw: 0,
-            prevPowerKw: 0,
-            activeTicks: 0,
-            totalTicks: 0,
-            idealKwh: 0,
-            actualKwh: 0,
-            lastStatus: p.status,
-            lastLowEventAt: 0
-        };
-      }
-    });
-  }
+  // Histórico de relatórios (restaurado)
 
-  /* --------------------- DOM CACHE --------------------- */
+  // Cacheia elementos do DOM usados amplamente pelo script
   function cacheElements() {
-    const ids = [
-      "powerNow","loadNow","energyToday","revenueToday","co2Saved","efficiency",
-      "totalPlacas","potenciaTotal","economia","faturamento","gaugePotencia","gaugeValue",
-      "placaTable","placaForm","placaNome","placaPotencia","placaStatus","placaCadastrarBtn",
-      "placaNomeError","placaPotenciaError","placaSuccess","analysisRange",
-      "analysisHeatmap","analysisRanking","analysisTimeline","analysisHeatMetric",
-      "analysisEventType","analysisEventSeverity","analysisPR","analysisUptime",
-  "analysisCO2","analysisAuto","darkToggle","pageTitle",
-      "supportFab","supportPanel","supportClose","supportBadge","supportWhatsApp",
-      "supportTicket","openTicketFab","ticketFabBadge","toggleView","section-dashboard",
-      "section-placas","placaMiniSelect","year","footerYear","userMenu","profileModal","closeProfile",
-      "editProfileBtn","saveProfile","cancelEdit","profileView","profileEdit","profileName",
-      "profileEmail","profileStatus","editName","editEmail","editStatus","userProfileImg",
-      "editProfileImg","previewProfileImg","logoutBtn","userSearch","addUserBtn","addUser",
-      "removeUserBtn","removeUser","userPermSelect","setPermBtn","permUserName","emailNotify",
-      "smsNotify","alertLowGen","saveNotifications","headerTime","headerTimeValue"
-      ,"usersSearch","btnAddUser","usersList","userModal","closeUserModal",
-      "userForm","userName","userEmail","userRole","saveUserBtn","cancelUserBtn",
-      "inviteBtn","inviteLinkBtn","inviteArea","inviteLink","inviteCopyBtn","inviteEmailBtn"
-    ];
-    ids.forEach(id => SS.els[id] = $(id));
+    SS.els = SS.els || {};
+    const map = {
+      pageTitle: 'pageTitle', darkToggle: 'darkToggle', year: 'year', footerYear: 'footerYear', logoutBtn: 'logoutBtn',
+      headerWeatherTemp: 'headerWeatherTemp', headerWeatherHum: 'headerWeatherHum', headerWeatherIcon: 'headerWeatherIcon',
+      weatherLocation: 'weatherLocation', weatherTempCurrent: 'weatherTempCurrent', weatherConditionCurrent: 'weatherConditionCurrent',
+      weatherWind: 'weatherWind', weatherHumidity: 'weatherHumidity', weatherPressure: 'weatherPressure', weatherCurrentIconInner: 'weatherCurrentIconInner',
+      forecastIcon: 'forecastIcon', forecastTempTomorrow: 'forecastTempTomorrow', forecastDescTomorrow: 'forecastDescTomorrow',
+      placaTable: 'placaTable', placaForm: 'placaForm', placaNome: 'placaNome', placaPotencia: 'placaPotencia', placaStatus: 'placaStatus', placaCadastrarBtn: 'placaCadastrarBtn',
+      totalPlacas: 'totalPlacas', potenciaTotal: 'potenciaTotal', economia: 'economia', faturamento: 'faturamento', gaugePotencia: 'gaugePotencia', gaugeValue: 'gaugeValue',
+      powerNow: 'powerNow', loadNow: 'loadNow', energyToday: 'energyToday', revenueToday: 'revenueToday', co2Saved: 'co2Saved', efficiency: 'efficiency',
+      realtimeChart: 'realtimeChart', monitoringChart: 'monitoringChart', dailyBarChart: 'dailyBarChart', placaDoughnut: 'placaDoughnut', solarRadiationChart: 'solarRadiationChart',
+      usersList: 'usersList', usersSearch: 'usersSearch', addUser: 'addUser', addUserBtn: 'addUserBtn', removeUserBtn: 'removeUserBtn', userSearch: 'userSearch',
+      userModal: 'userModal', userForm: 'userForm', userName: 'userName', userEmail: 'userEmail', userRole: 'userRole', closeUserModal: 'closeUserModal', cancelUserBtn: 'cancelUserBtn', saveUserBtn: 'saveUserBtn',
+      inviteBtn: 'inviteBtn', inviteLinkBtn: 'inviteLinkBtn', inviteCopyBtn: 'inviteCopyBtn', inviteLink: 'inviteLink', inviteEmailBtn: 'inviteEmailBtn',
+      reportForm: 'reportForm', dateStart: 'dateStart', dateEnd: 'dateEnd', reportsTable: 'reportsTable', exportCsv: 'exportCsv', clearReports: 'clearReports',
+      // histórico removido: reloadReportsHistory, reportsHistoryTable, reportsHistoryBox
+      supportFab: 'supportFab', supportPanel: 'supportPanel', supportClose: 'supportClose', supportWhatsApp: 'supportWhatsApp', supportTicket: 'supportTicket', openTicketFab: 'openTicketFab', ticketFabBadge: 'ticketFabBadge', supportBadge: 'supportBadge',
+      userMenu: 'userMenu', userProfileImg: 'userProfileImg', profileModal: 'profileModal', closeProfile: 'closeProfile', editProfileBtn: 'editProfileBtn',
+      backupBtn: 'backupBtn', restoreBtn: 'restoreBtn', themeSelect: 'themeSelect', langSelect: 'langSelect', saveSettings: 'saveSettings', saveThresholds: 'saveThresholds',
+      toggleView: 'toggleView', placaMiniSelect: 'placaMiniSelect', usersListModern: 'usersList'
+    };
+    Object.keys(map).forEach(k => {
+      try { SS.els[k] = document.getElementById(map[k]) || document.querySelector(`#${map[k]}`) || null; } catch (e) { SS.els[k] = null; }
+    });
+    try {
+      const found = Object.keys(SS.els).filter(k => !!SS.els[k]);
+      console.info('[Dashboard] cacheElements: encontrado', found.length, 'elementos');
+    } catch (e) { /* noop */ }
   }
 
-  /* --------------------- RELÓGIO HEADER --------------------- */
-  function initClock() {
-    const el = SS.els.headerTimeValue || $("headerTimeValue");
-    if (!el) return; // se elemento não existir, não faz nada
-    // Evita múltiplos intervals se init() for chamado de forma defensiva
-    if (SS.clockInterval) clearInterval(SS.clockInterval);
-    const update = () => {
-      try {
-        const now = new Date();
-        // Formato HH:MM:SS 24h
-        el.textContent = now.toLocaleTimeString('pt-BR', { hour12: false });
-      } catch { /* noop */ }
-    };
-    update();
-    SS.clockInterval = setInterval(update, 1000);
+  // Relógio do cabeçalho
+  function initClock(){
+    try { if (SS.clockInterval) clearInterval(SS.clockInterval); } catch {}
+    const el = document.getElementById('headerTimeValue');
+    if (!el) return;
+    const upd = () => { try { el.textContent = new Date().toLocaleTimeString('pt-BR'); } catch {} };
+    upd();
+    SS.clockInterval = setInterval(upd, 1000);
   }
 
   /* --------------------- USUÁRIOS / PERMISSÕES --------------------- */
@@ -311,7 +317,12 @@
 
   function escapeHtml(str) {
     if (!str) return '';
-    return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"})[s]);
+      return String(str == null ? '' : str)
+        .replace(/[&]/g, '&amp;')
+        .replace(/[<]/g, '&lt;')
+        .replace(/[>]/g, '&gt;')
+        .replace(/["]/g, '&quot;')
+        .replace(/['"]/g, '&#39;');
   }
 
   function openUserModal(mode = 'add', key = null) {
@@ -333,7 +344,8 @@
       title.textContent = 'Adicionar Usuário';
       $('userName').value = '';
       $('userEmail').value = '';
-      $('userRole').value = 'viewer';
+      // Default agora é administrador (pode trocar para viewer se desejar)
+      $('userRole').value = 'admin';
     }
   }
 
@@ -341,6 +353,17 @@
     const modal = $('userModal');
     if (!modal) return;
     modal.setAttribute('aria-hidden', 'true');
+  }
+
+  // Fallback delegado para abrir modal (garante funcionamento mesmo se binding falhar)
+  if (!window._userModalDelegated) {
+    window._userModalDelegated = true;
+    document.addEventListener('click', (e) => {
+      const trg = e.target.closest('[data-open-user-modal]');
+      if (trg) {
+        try { openUserModal('add'); } catch(err){ console.warn('Falha ao abrir modal usuário (delegado)', err); }
+      }
+    });
   }
 
   function saveUserFromForm(e) {
@@ -351,7 +374,8 @@
     const key = form.dataset.key || '';
     const name = ($('userName').value || '').trim();
     const email = ($('userEmail').value || '').trim();
-    const role = ($('userRole').value || 'viewer');
+    // Default para criação é admin se nada escolhido
+    const role = ($('userRole').value || 'admin');
     if (!name || !email) { alert('Preencha nome e email'); return; }
     const users = loadUsersObj();
     // use email as key
@@ -372,6 +396,18 @@
     const perms2 = getUserPerms(); perms2[k] = role; localStorage.setItem('userPerms', JSON.stringify(perms2));
     // Garante que apareça na lista (apenas usuários adicionados manualmente)
     addManagedUser(k);
+    // Tenta aplicar no backend se disponível e ator for admin
+    (async () => {
+      try {
+        if (window.SmartSolarStorage?.isRemote()) {
+          const actor = localStorage.getItem('userEmail') || '';
+          const actorRole = (SS.userRole || localStorage.getItem('userRole') || 'viewer');
+          if (actor && actorRole === 'admin') {
+            await window.SmartSolarStorage.setUserRole(actor, k, role);
+          }
+        }
+      } catch (err) { console.warn('Falha ao definir role remoto:', err?.message || err); }
+    })();
     closeUserModal();
     updateUserList();
   }
@@ -401,14 +437,35 @@
   function handleGenerateInvite(sendImmediately = false) {
     const email = ($('userEmail').value || '').trim();
     if (!email) return alert('Informe o e-mail do usuário antes de gerar convite.');
-    const token = generateInviteToken(32);
-    const link = `${location.origin}${location.pathname.replace(/[^/]*$/,'')}register.html?invite=${token}`;
-    const inv = { email, token, createdAt: Date.now() };
-    saveInvite(inv);
-    const area = $('inviteArea');
-    if (area) area.style.display = 'flex';
-    const input = $('inviteLink'); if (input) input.value = link;
-    if (sendImmediately) sendInviteEmail(email, link);
+    const area = $('inviteArea'); if (area) area.style.display = 'flex';
+    const input = $('inviteLink');
+    // Tenta criar convite via backend para permitir compartilhamento real
+    (async () => {
+      try {
+        // aguarda API
+        const wait = () => new Promise(r=>{ const s=Date.now(); (function t(){ if (window.API_READY===true||Date.now()-s>1200) return r(); setTimeout(t,60); })(); });
+        await wait();
+        const ownerEmail = localStorage.getItem('userEmail') || '';
+        if (!window.API_BASE || !ownerEmail) throw new Error('api indisponível');
+        const res = await fetch(`${window.API_BASE}/invites/create.php`, {
+          method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email: ownerEmail, role: 'viewer', ttl_minutes: 2880 })
+        });
+        if (!res.ok) throw new Error('falha ao criar convite');
+        const j = await res.json();
+        if (!j || !j.token) throw new Error('resposta inválida');
+        const link = `${location.origin}${location.pathname.replace(/[^/]*$/,'')}register.html?invite=${encodeURIComponent(j.token)}`;
+        if (input) input.value = link;
+        if (sendImmediately) sendInviteEmail(email, link);
+      } catch (e) {
+        // Fallback: gera token local (não cria vínculo no backend)
+        const token = generateInviteToken(32);
+        const link = `${location.origin}${location.pathname.replace(/[^/]*$/,'')}register.html?invite=${token}`;
+        const inv = { email, token, createdAt: Date.now() };
+        saveInvite(inv);
+        if (input) input.value = link;
+        if (sendImmediately) sendInviteEmail(email, link);
+      }
+    })();
   }
 
   /* --------------------- ALERTAS DESATIVADOS --------------------- */
@@ -428,23 +485,66 @@
     const tbody = table.querySelector('tbody');
     if (!tbody) return;
     tbody.innerHTML = '';
-    const uid = SS.userId || localStorage.getItem('userId') || '-';
+    let uidFallback = SS.userId || localStorage.getItem('userId') || '-';
+    if (uidFallback === '-' || uidFallback == null) {
+      // Gera ID determinístico a partir do email se estiver offline e sem userId real
+      const email = (localStorage.getItem('userEmail')||'').trim();
+      if (email) {
+        let hash = 0; for (let i=0;i<email.length;i++){ hash = ((hash<<5)-hash) + email.charCodeAt(i); hash |= 0; }
+        uidFallback = String(Math.abs(hash));
+      }
+    }
     SS.placas.forEach((p, idx) => {
       const tr = document.createElement('tr');
+      const isShared = (p.owner_id != null && String(p.owner_id) !== String(uidFallback));
+      // Se owner_id estiver ausente, atribui agora (melhora exibição do ID do cliente)
+      if (p.owner_id == null && uidFallback !== '-' && uidFallback != null) {
+        p.owner_id = uidFallback;
+      }
+      // Resolve owner name/email with sensible fallbacks
+      let ownerName = p.owner_name || '';
+      let ownerEmail = p.owner_email || '';
+      if (!ownerName && !ownerEmail) {
+        if (!isShared) {
+          ownerName = (localStorage.getItem('userName') || 'Você');
+          ownerEmail = (localStorage.getItem('userEmail') || '');
+        }
+      }
+      const ownerDisplay = !isShared ? 'Você' : (ownerName || ownerEmail || 'Usuário');
+      // Usa avatar customizado salvo se a placa for do usuário atual
+      const storedAvatar = (!isShared ? localStorage.getItem('userProfileImg') : null);
+      const ownerAvatar = storedAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(ownerDisplay)}&background=00d4ff&color=fff&size=24&rounded=true`;
+      const actions = (SS.userRole === 'admin')
+        ? `<button class="btn-secondary btn-edit" data-i="${idx}">Editar</button>
+           <button class="btn-secondary btn-dup" data-i="${idx}">Duplicar</button>
+           <button class="btn-secondary btn-rem" data-i="${idx}">Remover</button>`
+        : `<span class="muted" style="opacity:.65">Visualização</span>`;
       tr.innerHTML = `
-        <td class="col-uid" title="ID do cliente">${uid}</td>
+        <td class="col-uid" title="ID do cliente">${(p.owner_id != null ? p.owner_id : uidFallback)}</td>
+        <td class="owner-cell" title="${ownerEmail ? `Email: ${ownerEmail}` : ''}">
+          <img src="${ownerAvatar}" alt="" class="owner-avatar" />
+          <span class="owner-name">${escapeHtml(ownerDisplay)}</span>
+          ${isShared ? '<span class="shared-badge" title="Placa compartilhada">Compartilhada</span>' : ''}
+        </td>
         <td>${p.nome}</td>
         <td>${p.potencia} kWp</td>
         <td>${p.status}</td>
-        <td>
-          <button class="btn-secondary btn-edit" data-i="${idx}">Editar</button>
-          <button class="btn-secondary btn-dup" data-i="${idx}">Duplicar</button>
-          <button class="btn-secondary btn-rem" data-i="${idx}">Remover</button>
-        </td>`;
+        <td>${actions}</td>`;
       tbody.appendChild(tr);
     });
     // Atualiza o seletor rápido ao lado do título
     try { renderPlacaMiniSelect(); } catch(e) {}
+  }
+
+  function updateHeaderAvatar(){
+    const img = document.getElementById('userMenuAvatar');
+    if (!img) return;
+    const custom = localStorage.getItem('userProfileImg');
+    if (custom) img.src = custom;
+    else {
+      const name = localStorage.getItem('userName') || 'Usuario';
+      img.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=00d4ff&color=fff`;
+    }
   }
 
   // Mini seletor de placas na própria dashboard (sem sair para a seção Placas)
@@ -552,6 +652,10 @@
     table.addEventListener('click', e => {
       const btn = e.target.closest('button');
       if (!btn) return;
+      if ((SS.userRole || localStorage.getItem('userRole') || 'viewer') !== 'admin') {
+        alert('Somente administradores podem modificar placas.');
+        return;
+      }
       const idx = +btn.dataset.i;
       if (isNaN(idx)) return;
       if (btn.classList.contains('btn-rem')) {
@@ -570,7 +674,7 @@
         while (SS.placas.some(p => p.nome.toLowerCase() === newName.toLowerCase())) {
           newName = base.nome + ` (Cópia ${c++})`;
         }
-        SS.placas.push({ ...base, nome: newName });
+        SS.placas.push({ ...base, nome: newName, owner_id: (base.owner_id != null ? base.owner_id : (SS.userId || Number(localStorage.getItem('userId')) || null)) });
         ensurePanelState();
         renderPlacas();
         renderPlacaMiniSelect();
@@ -583,6 +687,10 @@
     });
   }
   function openEditPlacaModal(idx) {
+    if ((SS.userRole || localStorage.getItem('userRole') || 'viewer') !== 'admin') {
+      alert('Somente administradores podem editar placas.');
+      return;
+    }
     const p = SS.placas[idx];
     if (!p) return;
     closeModalById('editPlacaModal');
@@ -621,7 +729,7 @@
       const pot = safeNumber(ov.querySelector('#editPot').value, p.potencia);
       const status = ov.querySelector('#editStatus').value;
       if (!nome || pot <= 0) return alert('Dados inválidos.');
-      SS.placas[idx] = { nome, potencia: +pot.toFixed(2), status };
+      SS.placas[idx] = { nome, potencia: +pot.toFixed(2), status, owner_id: (p.owner_id != null ? p.owner_id : (SS.userId || Number(localStorage.getItem('userId')) || null)) };
       ensurePanelState();
       renderPlacas();
   renderPlacaMiniSelect();
@@ -718,6 +826,103 @@
     initSparklines();
     updateChartsTheme();
   }
+
+  /* --------------------- CLIMA (Dados Reais) --------------------- */
+  const WEATHER_CODES = {
+    0: {desc:'Céu limpo', icon:'fa-sun'},
+    1: {desc:'Poucas nuvens', icon:'fa-sun'},
+    2: {desc:'Parcialmente nublado', icon:'fa-cloud-sun'},
+    3: {desc:'Nublado', icon:'fa-cloud'},
+    45: {desc:'Nevoeiro', icon:'fa-smog'},
+    48: {desc:'Nevoeiro gelado', icon:'fa-smog'},
+    51: {desc:'Garoa leve', icon:'fa-cloud-rain'},
+    53: {desc:'Garoa', icon:'fa-cloud-rain'},
+    55: {desc:'Garoa intensa', icon:'fa-cloud-rain'},
+    61: {desc:'Chuva fraca', icon:'fa-cloud-showers-heavy'},
+    63: {desc:'Chuva', icon:'fa-cloud-showers-heavy'},
+    65: {desc:'Chuva forte', icon:'fa-cloud-showers-heavy'},
+    71: {desc:'Neve fraca', icon:'fa-snowflake'},
+    73: {desc:'Neve', icon:'fa-snowflake'},
+    75: {desc:'Neve intensa', icon:'fa-snowflake'},
+    77: {desc:'Cristais de gelo', icon:'fa-snowflake'},
+    80: {desc:'Aguaceiros leves', icon:'fa-cloud-showers-heavy'},
+    81: {desc:'Aguaceiros', icon:'fa-cloud-showers-heavy'},
+    82: {desc:'Aguaceiros fortes', icon:'fa-cloud-showers-heavy'},
+    95: {desc:'Trovoadas', icon:'fa-bolt'},
+    96: {desc:'Trovoadas (granizo leve)', icon:'fa-bolt'},
+    99: {desc:'Trovoadas (granizo forte)', icon:'fa-bolt'}
+  };
+  function mapWeather(code){ return WEATHER_CODES[code] || {desc:'Condição desconhecida', icon:'fa-question'}; }
+
+  async function fetchAndRenderWeather() {
+    try {
+      const email = localStorage.getItem('userEmail') || '';
+      let city = 'São Paulo';
+      try {
+        const users = JSON.parse(localStorage.getItem('users')||'{}');
+        if (email && users[email] && users[email].city) city = users[email].city;
+      } catch {}
+      // Geocoding
+      let lat = -23.55, lon = -46.63; // fallback SP
+      try {
+        const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=pt&format=json`);
+        if (geoRes.ok) {
+          const g = await geoRes.json();
+            if (g && g.results && g.results[0]) { lat = g.results[0].latitude; lon = g.results[0].longitude; city = g.results[0].name; }
+        }
+      } catch {}
+      const tz = 'America/Sao_Paulo';
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,pressure_msl,wind_speed_10m,weather_code&hourly=shortwave_radiation&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=${tz}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('weather fetch');
+      const data = await res.json();
+      const cur = data.current || {};
+      const daily = data.daily || {};
+      const codeInfo = mapWeather(cur.weather_code);
+      // Header
+      const ht = $('headerWeatherTemp'); if (ht) ht.textContent = (cur.temperature_2m != null ? Math.round(cur.temperature_2m) : '--') + '°C';
+      const hh = $('headerWeatherHum'); if (hh) hh.textContent = (cur.relative_humidity_2m != null ? Math.round(cur.relative_humidity_2m) : '--') + '%';
+      const hi = $('headerWeatherIcon'); if (hi && codeInfo.icon) hi.className = 'fas ' + codeInfo.icon;
+      // Clima seção
+      const loc = $('weatherLocation'); if (loc) loc.textContent = city;
+      const tc = $('weatherTempCurrent'); if (tc) tc.textContent = ht ? ht.textContent : '--°C';
+      const cond = $('weatherConditionCurrent'); if (cond) cond.textContent = codeInfo.desc;
+      const wWind = $('weatherWind'); if (wWind) wWind.textContent = (cur.wind_speed_10m != null ? Math.round(cur.wind_speed_10m) : '--') + ' km/h';
+      const wHum = $('weatherHumidity'); if (wHum) wHum.textContent = hh ? hh.textContent : '--%';
+      const wPres = $('weatherPressure'); if (wPres) wPres.textContent = (cur.pressure_msl != null ? Math.round(cur.pressure_msl) : '--') + ' hPa';
+      const wIconInner = $('weatherCurrentIconInner'); if (wIconInner && codeInfo.icon) wIconInner.className = 'fas ' + codeInfo.icon;
+      // Amanhã
+      if (daily && Array.isArray(daily.weather_code) && daily.weather_code.length > 1) {
+        const tomorrowCode = daily.weather_code[1];
+        const tomorrowInfo = mapWeather(tomorrowCode);
+        const fIcon = $('forecastIcon'); if (fIcon) fIcon.className = 'fas ' + tomorrowInfo.icon;
+        const fTemp = $('forecastTempTomorrow'); if (fTemp) {
+          const tMax = daily.temperature_2m_max ? Math.round(daily.temperature_2m_max[1]) : '--';
+          const tMin = daily.temperature_2m_min ? Math.round(daily.temperature_2m_min[1]) : '--';
+          fTemp.textContent = `${tMax}°C / ${tMin}°C`;
+        }
+        const fDesc = $('forecastDescTomorrow'); if (fDesc) fDesc.textContent = tomorrowInfo.desc;
+      }
+      // Radiação solar (atualiza gráfico se disponível)
+      if (data.hourly && data.hourly.time && data.hourly.shortwave_radiation && SS.charts.radiation) {
+        const hours = data.hourly.time;
+        const rad = data.hourly.shortwave_radiation;
+        // Seleciona pontos aproximados: 6h,8h,10h,12h,14h,16h,18h
+        const wanted = ['06:00','08:00','10:00','12:00','14:00','16:00','18:00'];
+        const extracted = [];
+        wanted.forEach(h=>{
+          const idx = hours.findIndex(t=> t.endsWith(h));
+          extracted.push(idx !== -1 ? rad[idx] : null);
+        });
+        const ds = SS.charts.radiation.data.datasets[0];
+        ds.data = extracted.map(v=> v == null ? null : Math.round(v));
+        SS.charts.radiation.update();
+      }
+    } catch (e) {
+      console.warn('Falha ao obter clima real:', e.message);
+    }
+  }
+
 
   // Pré-preenche gráficos com histórico sintético para evitar linha reta inicial
   function seedInitialCharts() {
@@ -922,7 +1127,8 @@
       const st = SS.panelState[p.nome];
       if (!st) return;
       st.prevPowerKw = st.powerKw || 0;
-      const statusFactor = p.status === 'Ativa' ? 1 : (p.status === 'Manutenção' ? 0.5 : 0);
+      // Apenas placas Ativas geram; Inativa/Manutenção não geram (0)
+      const statusFactor = p.status === 'Ativa' ? 1 : 0;
       const idealKw = (p.potencia||0) * irradiance;
       const tempAdj = 1 - Math.max(0, ((st.tempC||30)-25)*0.004);
       const noise = 0.9 + Math.random()*0.2;
@@ -1147,7 +1353,7 @@
       btnCancel.addEventListener('click', ()=> closeModalById('ticketModalOverlay'));
       btnClose.addEventListener('click', ()=> closeModalById('ticketModalOverlay'));
       ov.addEventListener('click', ev => { if (ev.target===ov) closeModalById('ticketModalOverlay'); });
-      btnSend.addEventListener('click', ()=> {
+      btnSend.addEventListener('click', async ()=> {
         const ti = titulo.value.trim();
         if (!ti) return alert('Informe um título.');
         const tipo = ov.querySelector('#tkTipo').value;
@@ -1155,13 +1361,32 @@
         const em = ov.querySelector('#tkEmail').value.trim();
         const de = ov.querySelector('#tkDesc').value.trim();
         if (em && !localStorage.getItem('notifyEmail')) localStorage.setItem('notifyEmail', em);
+
+        // Se backend estiver disponível, cria ticket no banco
+        try {
+          if (window.SmartSolarStorage?.isRemote()) {
+            const res = await window.SmartSolarStorage.createTicket({ email: em, titulo: ti, tipo, nivel, descricao: de });
+            const proto = (res && res.protocolo) ? res.protocolo : null;
+            if (proto) {
+              // Também salva localmente para visualização offline
+              const tickets = JSON.parse(localStorage.getItem('tickets') || '[]');
+              tickets.push({ code: proto, name: (localStorage.getItem('userName')||''), email: em, category: tipo, message: de||ti, createdAt: new Date().toISOString(), status: 'aberto' });
+              localStorage.setItem('tickets', JSON.stringify(tickets));
+              closeModalById('ticketModalOverlay');
+              alert(`Chamado registrado com sucesso!\nProtocolo: ${proto}`);
+              return;
+            }
+          }
+        } catch (err) { /* segue fallback */ }
+
+        // Fallback: registra como alerta local
         const novo = { data: new Date().toLocaleString(), tipo, descricao: ti + (de? ' – '+de:''), nivel };
         let arr = loadAlertas(); arr.unshift(novo);
         localStorage.setItem('alertas', JSON.stringify(arr));
         renderAlertas();
         updateSupportBadge();
         closeModalById('ticketModalOverlay');
-        alert('Chamado registrado com sucesso! ✓');
+        alert('Chamado registrado (modo offline).');
       });
     }
     supportTicket?.addEventListener('click', () => { openPanel(); openTicketModal(); });
@@ -1202,8 +1427,11 @@
         try {
           cleanupOverlays();
           if (target !== 'section-usuarios') closeUserModal();
-          // Se abriu relatórios, preenche datas padrão
-          if (target === 'section-relatorios') initReportDates();
+          // Se abriu relatórios, preenche datas e carrega histórico
+          if (target === 'section-relatorios') {
+            initReportDates();
+            // histórico removido
+          }
         } catch(e){ console.warn('Erro ao alternar abas:', e); }
         // Aba de análises removida
       });
@@ -1274,61 +1502,118 @@
   }
 
   /* --------------------- RELATÓRIOS --------------------- */
+  // Helpers de data sem deslocamento de fuso (evita -1 dia ao usar 'YYYY-MM-DD')
+  function formatYmd(d) {
+    return [d.getFullYear(), String(d.getMonth()+1).padStart(2,'0'), String(d.getDate()).padStart(2,'0')].join('-');
+  }
+  function parseYmd(ymd) {
+    const [y,m,d] = (ymd||'').split('-').map(Number);
+    if (!y||!m||!d) return null;
+    return new Date(y, m-1, d); // constrói data local (não UTC)
+  }
   function initReportDates() {
     const dateStart = $('dateStart');
     const dateEnd = $('dateEnd');
     if (!dateStart || !dateEnd) return;
     
-    // Define data de fim como hoje
+    // Define data de fim como hoje (local, sem UTC shift)
     const today = new Date();
-    const endDate = today.toISOString().split('T')[0];
-    
+    const endDate = formatYmd(new Date(today.getFullYear(), today.getMonth(), today.getDate()));
     // Define data de início como 7 dias atrás
-    const startDate = new Date(today);
-    startDate.setDate(startDate.getDate() - 7);
-    const startDateStr = startDate.toISOString().split('T')[0];
+    const startBase = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    startBase.setDate(startBase.getDate() - 7);
+    const startDateStr = formatYmd(startBase);
     
     if (!dateStart.value) dateStart.value = startDateStr;
     if (!dateEnd.value) dateEnd.value = endDate;
+
+    // Impede seleção de datas futuras no formulário
+    dateStart.setAttribute('max', endDate);
+    dateEnd.setAttribute('max', endDate);
   }
 
-  function generateReport(startDate, endDate) {
+  // Função de carregamento de histórico de relatórios (restaurada)
+  // histórico de relatórios removido
+  // Sistema de alertas estilizados
+  function showAlert(message, type = 'info', title = '') {
+    try {
+      const host = window.location.host || 'SmartSolar';
+      const cont = document.getElementById('alertsContainer');
+      if (!cont) { console.warn('[Alert] Container inexistente'); return window.alert(message); }
+      const div = document.createElement('div');
+      div.className = `alert-item ${type}`;
+      const icons = { success:'check-circle', error:'times-circle', warn:'exclamation-triangle', info:'info-circle' };
+      const icon = icons[type] || icons.info;
+      div.innerHTML = `
+        <div class="icon"><i class="fas fa-${icon}"></i></div>
+        <div class="content">
+          <div class="title">${title ? title : host}</div>
+          <div class="msg">${message}</div>
+        </div>
+        <button class="close-btn" aria-label="Fechar notificação">✕</button>
+      `;
+      const close = () => { div.classList.add('out'); setTimeout(()=> div.remove(), 360); };
+      div.querySelector('.close-btn').addEventListener('click', close);
+      setTimeout(close, 6500); // auto-fecha
+      cont.appendChild(div);
+    } catch(e) { console.warn('showAlert fallback', e); window.alert(message); }
+  }
+
+  async function generateReport(startDate, endDate, filter = 'todos') {
     const tbody = $('reportsTable')?.querySelector('tbody');
+    console.info('[Dashboard] generateReport: iniciando', startDate, endDate, filter);
     if (!tbody) return;
 
     // Limpa tabela anterior
     tbody.innerHTML = '';
 
     // Gera dados simulados baseados nas datas
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+    let start = parseYmd(startDate);
+    let end = parseYmd(endDate);
+    if (!start || !end) { alert('Datas inválidas.'); return; }
+
+    // Normaliza e garante limites: fim não pode ser futuro; início não pode ser após fim
+    const now = new Date();
+    const todayLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    if (end > todayLocal) end = todayLocal;
+    if (start > end) start = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+    const startYmd = formatYmd(start);
+    const endYmd = formatYmd(end);
+    try {
+      const ds = $('dateStart'); const de = $('dateEnd');
+      if (ds) ds.value = startYmd; if (de) de.value = endYmd;
+    } catch(e) { /* noop */ }
     const reports = [];
 
     // Simula alguns relatórios de exemplo
-    let currentDate = new Date(start);
+    let currentDate = new Date(start.getTime());
     while (currentDate <= end) {
-      const dateStr = currentDate.toLocaleDateString('pt-BR');
+      const dateStr = currentDate.toLocaleDateString('pt-BR'); // local OK
       
       // Geração de energia
       const energiaGerada = (Math.random() * 50 + 30).toFixed(2);
-      reports.push({
-        data: dateStr,
-        tipo: 'Geração',
-        descricao: 'Energia gerada no dia',
-        valor: `${energiaGerada} kWh`
-      });
+      if (filter === 'todos' || filter === 'geracao') {
+        reports.push({
+          data: dateStr,
+          tipo: 'Geração',
+            descricao: 'Energia gerada no dia',
+            valor: `${energiaGerada} kWh`
+        });
+      }
 
       // Consumo
       const consumo = (Math.random() * 40 + 20).toFixed(2);
-      reports.push({
-        data: dateStr,
-        tipo: 'Consumo',
-        descricao: 'Energia consumida',
-        valor: `${consumo} kWh`
-      });
+      if (filter === 'todos' || filter === 'consumo') {
+        reports.push({
+          data: dateStr,
+          tipo: 'Consumo',
+          descricao: 'Energia consumida',
+          valor: `${consumo} kWh`
+        });
+      }
 
       // Economia (aleatório a cada 3 dias)
-      if (Math.random() > 0.7) {
+      if (Math.random() > 0.7 && (filter === 'todos' || filter === 'economia')) {
         const economia = (Math.random() * 100 + 50).toFixed(2);
         reports.push({
           data: dateStr,
@@ -1356,10 +1641,78 @@
     // Salva no estado para exportação
     SS.currentReport = reports;
 
+    // Tenta persistir um registro consolidado no backend (relatórios)
+    try {
+      const email = localStorage.getItem('userEmail');
+      if (email && window.SmartSolarStorage?.isRemote && window.SmartSolarStorage.isRemote()) {
+        console.info('[Dashboard] generateReport: tentando persistir no backend para', email);
+        const titulo = `Relatório ${startYmd} a ${endYmd} (${filter})`;
+        // Monta payload compacto (não inclui strings formatadas redundantes)
+        const dados = reports.map(r => ({ data: r.data, tipo: r.tipo, descricao: r.descricao, valor: r.valor }));
+        let res = await window.SmartSolarStorage.createReport(email, {
+          titulo,
+          tipo: 'simulado',
+          status: 'gerado',
+          periodo_inicio: startYmd,
+          periodo_fim: endYmd,
+          corpo: null,
+          dados
+        });
+        if (res && res.ok) {
+          console.info('[Relatórios] Criado no backend ID', res.id);
+          // loadReportsHistory removido
+        } else if (res && res.error) {
+          console.warn('[Relatórios] Falha ao salvar no backend:', res.error);
+          // Tenta ajustar datas conforme mensagem do backend e reenvia uma vez
+          const msg = String(res.error || '').toLowerCase();
+          let adjusted = false;
+          if (msg.includes('fim') && msg.includes('futuro')) {
+            const adjEnd = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+            adjEnd.setDate(adjEnd.getDate() - 1);
+            if (adjEnd >= start) { end = adjEnd; adjusted = true; }
+          } else if (msg.includes('início') && msg.includes('futuro')) {
+            const adjStart = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+            adjStart.setDate(adjStart.getDate() - 1);
+            start = adjStart; adjusted = true;
+          } else if (msg.includes('início') && msg.includes('anterior')) {
+            // Garante início <= fim
+            start = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+            adjusted = true;
+          }
+          if (adjusted) {
+            const adjStartYmd = formatYmd(start);
+            const adjEndYmd = formatYmd(end);
+            try { const ds = $('dateStart'); const de = $('dateEnd'); if (ds) ds.value = adjStartYmd; if (de) de.value = adjEndYmd; } catch {}
+            res = await window.SmartSolarStorage.createReport(email, {
+              titulo,
+              tipo: 'simulado',
+              status: 'gerado',
+              periodo_inicio: adjStartYmd,
+              periodo_fim: adjEndYmd,
+              corpo: null,
+              dados
+            });
+            if (res && res.ok) {
+              console.info('[Relatórios] Criado no backend após ajuste ID', res.id);
+              showAlert('Período ajustado para evitar datas futuras e salvo no banco.', 'info', 'Relatórios');
+            } else {
+              showAlert(`Falha ao salvar no banco:\n${res && res.error ? res.error : 'Erro desconhecido'}`, 'error', 'Relatórios');
+            }
+          } else {
+            showAlert(`Falha ao salvar no banco:\n${res.error}`, 'error', 'Relatórios');
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('[Relatórios] Erro ao persistir no backend:', e.message);
+      showAlert('Erro ao salvar relatório no banco. Verifique a API.', 'error', 'Relatórios');
+    }
+
     // Habilita exportação
     try { const btn = $('exportCsv'); if (btn) btn.disabled = false; } catch(e) { /* noop */ }
 
-    alert(`Relatório gerado com ${reports.length} registros!`);
+    console.info('[Dashboard] generateReport: finalizado, registros gerados:', reports.length);
+    showAlert(`Relatório gerado com ${reports.length} registros!\nFiltro: ${filter}`, 'success', 'Relatórios');
   }
 
   function exportReportToCsv() {
@@ -1394,13 +1747,17 @@
       SS.els.placaForm._bound = true;
       SS.els.placaForm.addEventListener('submit', e => {
         e.preventDefault();
+        if ((SS.userRole || localStorage.getItem('userRole') || 'viewer') !== 'admin') {
+          alert('Somente administradores podem criar placas.');
+          return;
+        }
         const nome = SS.els.placaNome?.value.trim();
         const pot = safeNumber(SS.els.placaPotencia?.value, 0);
         const status = SS.els.placaStatus?.value || 'Ativa';
         if (!nome || pot <= 0) return alert('Dados inválidos.');
         if (SS.placas.some(p => p.nome.toLowerCase() === nome.toLowerCase()))
           return alert('Nome já existe.');
-        SS.placas.push({ nome, potencia: +pot.toFixed(2), status });
+        SS.placas.push({ nome, potencia: +pot.toFixed(2), status, owner_id: (SS.userId || Number(localStorage.getItem('userId')) || null) });
         ensurePanelState();
         renderPlacas();
   renderPlacaMiniSelect();
@@ -1421,8 +1778,10 @@
       if (!btn) return;
       const nome = (SS.els.placaNome?.value || '').trim();
       const pot = safeNumber(SS.els.placaPotencia?.value, 0);
-      const valid = nome.length >= 2 && pot > 0;
+      const role = (SS.userRole || localStorage.getItem('userRole') || 'viewer');
+      const valid = (role === 'admin') && nome.length >= 2 && pot > 0;
       btn.disabled = !valid;
+      if (role !== 'admin') btn.title = 'Apenas administradores podem cadastrar placas'; else btn.removeAttribute('title');
     }
     // Limpa mensagens de erro/sucesso e atualiza estado inicialmente
     try { if (SS.els.placaNomeError) SS.els.placaNomeError.hidden = true; } catch(e){}
@@ -1450,9 +1809,9 @@
       const isEmail = val.includes('@');
       obj[val] = { name: isEmail ? val.split('@')[0] : val, email: isEmail ? val : '' };
       saveUsersObj(obj);
-      setUserPerm(val, 'viewer');
+      setUserPerm(val, 'admin');
       addManagedUser(val); // aparece apenas quando adicionado manualmente
-      SS.els.addUser.value = '';
+      if (SS.els.addUser) SS.els.addUser.value = '';
       updateUserList();
       alert('Usuário adicionado.');
     });
@@ -1526,7 +1885,18 @@
           const li = sel.closest('li');
           const key = li && li.dataset && li.dataset.key;
           if (!key) return;
-          setUserPerm(key, sel.value);
+          const role = sel.value;
+          setUserPerm(key, role);
+          // Tenta refletir no backend
+          (async () => {
+            try {
+              if (window.SmartSolarStorage?.isRemote()) {
+                const actor = localStorage.getItem('userEmail') || '';
+                const actorRole = (SS.userRole || localStorage.getItem('userRole') || 'viewer');
+                if (actor && actorRole === 'admin') await window.SmartSolarStorage.setUserRole(actor, key, role);
+              }
+            } catch (err) { console.warn('Falha ao definir role remoto:', err?.message || err); }
+          })();
         }
       });
     }
@@ -1579,20 +1949,21 @@
       const obj = loadUsersObj();
       const key = findUserKey(obj, q);
       if (!key) return alert('Usuário não cadastrado.');
-      setUserPerm(key, SS.els.userPermSelect?.value || 'viewer');
+      const role = SS.els.userPermSelect?.value || 'viewer';
+      setUserPerm(key, role);
+      (async () => {
+        try {
+          if (window.SmartSolarStorage?.isRemote()) {
+            const actor = localStorage.getItem('userEmail') || '';
+            const actorRole = (SS.userRole || localStorage.getItem('userRole') || 'viewer');
+            if (actor && actorRole === 'admin') await window.SmartSolarStorage.setUserRole(actor, key, role);
+          }
+        } catch (err) { console.warn('Falha ao definir role remoto:', err?.message || err); }
+      })();
       updateUserList();
       alert('Permissão atualizada.');
     });
-    // Notificações
-    if (SS.els.emailNotify) SS.els.emailNotify.value = localStorage.getItem('notifyEmail') || '';
-    if (SS.els.smsNotify) SS.els.smsNotify.value = localStorage.getItem('notifySMS') || '';
-    if (SS.els.alertLowGen) SS.els.alertLowGen.checked = localStorage.getItem('alertLowGen') === 'true';
-    SS.els.saveNotifications?.addEventListener('click', () => {
-      if (SS.els.emailNotify) localStorage.setItem('notifyEmail', SS.els.emailNotify.value);
-      if (SS.els.smsNotify) localStorage.setItem('notifySMS', SS.els.smsNotify.value);
-      if (SS.els.alertLowGen) localStorage.setItem('alertLowGen', SS.els.alertLowGen.checked);
-      alert('Notificações salvas.');
-    });
+    // Painel de notificações removido
 
     // Filtros análises
     SS.els.analysisHeatMetric?.addEventListener('change', renderAnalysisHeatmap);
@@ -1616,6 +1987,51 @@
     const reportsTable = $('reportsTable');
   const exportCsvBtn = $('exportCsv');
   const clearReportsBtn = $('clearReports');
+    // histórico removido: reloadReportsHistoryBtn
+
+    // Chips de tipo de relatório
+    const typeChipsWrap = document.getElementById('reportTypeChips');
+    if (typeChipsWrap && !typeChipsWrap._bound) {
+      typeChipsWrap._bound = true;
+      typeChipsWrap.addEventListener('click', ev => {
+        const btn = ev.target.closest('.chip');
+        if (!btn) return;
+        typeChipsWrap.querySelectorAll('.chip').forEach(c => { c.classList.remove('active'); c.setAttribute('aria-checked','false'); });
+        btn.classList.add('active'); btn.setAttribute('aria-checked','true');
+        const sel = $('reportFilter'); if (sel) sel.value = btn.dataset.type || 'todos';
+        // Auto-gerar relatório ao escolher o tipo, sem precisar clicar em "Filtrar"
+        try {
+          const ds = $('dateStart'); const de = $('dateEnd');
+          if (ds && de) {
+            // Se datas estiverem vazias, inicializa com padrão
+            if (!ds.value || !de.value) initReportDates();
+            const filtro = sel ? sel.value : (btn.dataset.type || 'todos');
+            if (ds.value && de.value) generateReport(ds.value, de.value, filtro);
+          }
+        } catch(e) { /* noop */ }
+      });
+    }
+    // Botão limpar filtros
+    const btnLimparRelatorio = $('btnLimparRelatorio');
+    if (btnLimparRelatorio && !btnLimparRelatorio._bound) {
+      btnLimparRelatorio._bound = true;
+      btnLimparRelatorio.addEventListener('click', () => {
+        try {
+          if (dateStart) dateStart.value = '';
+          if (dateEnd) dateEnd.value = '';
+          const sel = $('reportFilter'); if (sel) sel.value = 'todos';
+          if (typeChipsWrap) {
+            typeChipsWrap.querySelectorAll('.chip').forEach(c => { c.classList.remove('active'); c.setAttribute('aria-checked','false'); });
+            const first = typeChipsWrap.querySelector('.chip[data-type="todos"]');
+            if (first) { first.classList.add('active'); first.setAttribute('aria-checked','true'); }
+          }
+          const tbody = reportsTable?.querySelector('tbody'); if (tbody) tbody.innerHTML = '';
+          SS.currentReport = [];
+          const btn = $('exportCsv'); if (btn) btn.disabled = true;
+          showAlert('Filtros limpos.', 'info', 'Relatórios');
+        } catch {}
+      });
+    }
 
     if (reportForm && !reportForm._bound) {
       reportForm._bound = true;
@@ -1624,7 +2040,19 @@
         if (!dateStart || !dateStart.value || !dateEnd || !dateEnd.value) {
           return alert('Por favor, selecione as datas de início e fim.');
         }
-        generateReport(dateStart.value, dateEnd.value);
+        // Validações: não permitir futuro e início<=fim
+        try {
+          const todayStr = new Date().toISOString().split('T')[0];
+          if (dateStart.value > todayStr || dateEnd.value > todayStr) {
+            return alert('As datas não podem ser futuras.');
+          }
+          if (dateStart.value > dateEnd.value) {
+            return alert('A data de início deve ser anterior ou igual à data de fim.');
+          }
+        } catch {}
+        const filterSel = $('reportFilter');
+        const filter = filterSel ? filterSel.value : 'todos';
+        generateReport(dateStart.value, dateEnd.value, filter);
       });
     }
 
@@ -1654,8 +2082,11 @@
       });
     }
 
+    // Recarregar histórico
+    // botão recarregar histórico removido
+
     // Logout (limpa apenas chaves de autenticação; preserva preferências e foto)
-    SS.els.logoutBtn?.addEventListener('click', () => {
+    const doLogout = () => {
       try {
         const authKeys = [
           'userLoggedIn', 'userEmail', 'userName',
@@ -1666,7 +2097,18 @@
         sessionStorage.clear();
       } catch {}
       window.location.href = 'index.html';
-    });
+    };
+    if (SS.els.logoutBtn && !SS.els.logoutBtn._bound) {
+      SS.els.logoutBtn._bound = true;
+      SS.els.logoutBtn.addEventListener('click', doLogout);
+    }
+    // Delegado de contingência caso elemento não tenha sido cacheado por algum motivo
+    if (!window._logoutDelegated) {
+      window._logoutDelegated = true;
+      document.addEventListener('click', (e) => {
+        if (e.target.closest('#logoutBtn')) doLogout();
+      });
+    }
 
     /* ---------------- CONFIGURAÇÕES (Parâmetros / Limites / Preferências) ---------------- */
     // Carregar valores persistidos
@@ -1737,8 +2179,7 @@
     // Backup & Restore simples
     backupBtn?.addEventListener('click', () => {
       const keys = [
-        'users','userPerms','alertas','tickets','theme','lang','plantCapacity','tariff','minGen','maxDelta',
-        'notifyEmail','notifySMS','alertLowGen','userProfileImg'
+        'users','userPerms','alertas','tickets','theme','lang','plantCapacity','tariff','minGen','maxDelta','userProfileImg'
       ];
       const data = {};
       keys.forEach(k => { const v = localStorage.getItem(k); if (v!=null) data[k]=v; });
@@ -1937,11 +2378,27 @@
   if (SS.inited) return;
   SS.inited = true;
 
+  console.info('[Dashboard] init: iniciando');
+
   // Bloqueia acesso se não autenticado no backend
   const ok = await requireBackendAuth();
   if (!ok) return;
 
+  // Forçar papel administrador para TODOS os usuários (pedido explícito)
+  try {
+    SS.userRole = 'admin';
+    localStorage.setItem('userRole','admin');
+    const rbForce = document.getElementById('roleBadge');
+    if (rbForce) {
+      rbForce.textContent = 'Administrador';
+      rbForce.classList.add('admin');
+      rbForce.classList.remove('viewer');
+      rbForce.title = 'Você está com acesso de Administrador';
+    }
+  } catch {}
+
   cacheElements();
+  console.info('[Dashboard] init: cacheElements chamado');
   ensurePanelState();
   if (!SS.panelEvents.length) SS.panelEvents.push({ time: Date.now(), tipo:'sistema', sev:'baixa', desc:'Monitor iniciado' });
 
@@ -1955,9 +2412,45 @@
   // sync sidebar name in case it's still using the placeholder
   try { syncSidebarDisplayName(); } catch(e) { /* noop */ }
   bindToggleView();
+  // Inicializa relógio do cabeçalho
   initClock();
 
+  // Aplica restrições de interface conforme a role
+  try {
+    const role = (SS.userRole || localStorage.getItem('userRole') || 'viewer');
+    // Atualiza badge no cabeçalho
+    const rb = document.getElementById('roleBadge');
+    if (rb) {
+      const isAdmin = role === 'admin';
+      rb.textContent = isAdmin ? 'Administrador' : 'Visualizador';
+      rb.classList.toggle('admin', isAdmin);
+      rb.classList.toggle('viewer', !isAdmin);
+      rb.title = `Você está com acesso de ${isAdmin ? 'Administrador' : 'Visualizador'}`;
+    }
+    if (role !== 'admin') {
+      // Desabilita o formulário de criação
+      if (SS.els.placaCadastrarBtn) {
+        SS.els.placaCadastrarBtn.disabled = true;
+        SS.els.placaCadastrarBtn.title = 'Apenas administradores podem cadastrar placas';
+      }
+      if (SS.els.placaNome) SS.els.placaNome.disabled = true;
+      if (SS.els.placaPotencia) SS.els.placaPotencia.disabled = true;
+      if (SS.els.placaStatus) SS.els.placaStatus.disabled = true;
+      // Insere badge de somente leitura no cabeçalho da seção Placas
+      const sec = document.getElementById('section-placas');
+      const h2 = sec ? sec.querySelector('h2') : null;
+      if (h2 && !h2.querySelector('.read-only-badge')) {
+        const badge = document.createElement('span');
+        badge.className = 'read-only-badge';
+        badge.textContent = 'Somente leitura';
+        badge.style.cssText = 'margin-left:10px;padding:4px 8px;border-radius:999px;background:#444;color:#ffcc00;font-weight:600;font-size:0.85rem;border:1px solid rgba(255,255,255,0.12);';
+        h2.appendChild(badge);
+      }
+    }
+  } catch {}
+
   renderPlacas();
+  updateHeaderAvatar();
   bindPlacaTable(); // Necessário para botões de Editar / Duplicar / Remover
   atualizarCards();
 
@@ -1969,6 +2462,11 @@
   updateUserList();
   initCharts();
   seedInitialCharts();
+  // Busca clima real inicial
+  fetchAndRenderWeather();
+  console.info('[Dashboard] init: fetchAndRenderWeather agendado');
+  // Atualiza clima a cada 10 min
+  setInterval(fetchAndRenderWeather, 600000);
   // Inicializa histórico da simulação
   initSimHistory();
   // Renderiza o gráfico de barras conforme escopo logo após criar os charts
@@ -2003,7 +2501,14 @@
       if (!window.SmartSolarStorage?.isRemote() || !email) return;
       const remote = await window.SmartSolarStorage.fetchPlacas(email);
       if (remote && remote.length) {
-        SS.placas = remote.map(p => ({ nome: p.nome, potencia: Number(p.potencia) || 0, status: p.status || 'ativa' }));
+        SS.placas = remote.map(p => ({
+          owner_id: (p.owner_id != null ? Number(p.owner_id) : (SS.userId || Number(localStorage.getItem('userId')) || null)),
+          owner_name: p.owner_name || null,
+          owner_email: p.owner_email || null,
+          nome: p.nome,
+          potencia: Number(p.potencia) || 0,
+          status: p.status || 'Ativa'
+        }));
         ensurePanelState();
         renderPlacas();
         atualizarCards();
@@ -2025,6 +2530,8 @@
     try {
       const email = localStorage.getItem('userEmail') || '';
       if (!window.SmartSolarStorage?.isRemote() || !email) return;
+      const role = (SS.userRole || localStorage.getItem('userRole') || 'viewer');
+      if (role !== 'admin') return; // não tenta sincronizar se não é admin
       await window.SmartSolarStorage.syncPlacas(email, SS.placas);
     } catch (e) {
       console.warn('Falha ao sincronizar placas remotas:', e.message);

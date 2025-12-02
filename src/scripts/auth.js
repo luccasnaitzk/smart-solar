@@ -130,48 +130,41 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 600);
   });
 
-  // Recuperação de senha (modal próprio — inline)
-  function openForgotModal(prefillEmail) {
-    const overlay = document.createElement('div'); overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:10000';
-    const card = document.createElement('div'); card.style.cssText = 'background:#23243a;color:#fff;border-radius:14px;padding:18px;min-width:320px;max-width:92vw;width:420px';
+  // Recuperação de senha (design novo; e-mail ou telefone; envio real via API)
+  function openForgotModal(prefillContact) {
+    const overlay = document.createElement('div'); overlay.className = 'fp-overlay';
+    const card = document.createElement('div'); card.className = 'fp-card';
     card.innerHTML = `
-      <h3 style="margin:0 0 12px;color:#00d4ff;display:flex;align-items:center;gap:8px"><i class=\"fas fa-unlock-alt\"></i> Recuperar senha</h3>
-      <div id=\"step1\">
-        <label style=\"display:block;font-weight:600;color:#a6e7ff;margin-bottom:6px\">Método</label>
-        <div style=\"display:flex;gap:10px;margin-bottom:8px\">
-          <label style=\"cursor:pointer;display:flex;align-items:center;gap:8px\"><input type=\"radio\" name=\"fpMethod\" value=\"email\" checked> E-mail</label>
-          <label style=\"cursor:pointer;display:flex;align-items:center;gap:8px\"><input type=\"radio\" name=\"fpMethod\" value=\"sms\"> SMS</label>
-        </div>
-        <label style=\"display:block;font-weight:600;color:#a6e7ff;margin-bottom:6px\">E-mail da conta</label>
-        <input id=\"fpEmail\" type=\"email\" placeholder=\"voce@exemplo.com\" style=\"width:100%;padding:10px;border-radius:8px;border:1px solid #3a3b54;background:#1c1d32;color:#fff\">
-        <div id=\"phoneRow\" style=\"display:none;margin-top:8px\">
-          <label style=\"display:block;font-weight:600;color:#a6e7ff;margin-bottom:6px\">Telefone (DDD)</label>
-          <input id=\"fpPhone\" type=\"tel\" placeholder=\"(99) 9 9999-9999\" style=\"width:100%;padding:10px;border-radius:8px;border:1px solid #3a3b54;background:#1c1d32;color:#fff\">
-        </div>
-        <small style=\"display:block;margin-top:8px;color:#aeb7d0;opacity:.9\">Enviaremos um código de verificação (simulado).</small>
-        <div id=\"fpMessage1\"></div>
-        <div style=\"display:flex;gap:10px;justify-content:flex-end;margin-top:12px\"><button id=\"fpCancel1\" class=\"btn-secondary\">Cancelar</button><button id=\"fpSend\" class=\"btn-primary\">Enviar código</button></div>
+      <div class="fp-header">
+        <h3><i class="fas fa-unlock-alt"></i> Recuperar acesso</h3>
+        <button id="fpCloseX" class="fp-close btn-secondary" aria-label="Fechar"><i class="fas fa-times"></i></button>
       </div>
-      <div id=\"step2\" style=\"display:none;margin-top:8px\">
-        <label style=\"display:block;font-weight:600;color:#a6e7ff;margin-bottom:6px\">Código recebido</label>
-        <input id=\"fpCode\" type=\"text\" placeholder=\"6 dígitos\" style=\"width:100%;padding:10px;border-radius:8px;border:1px solid #3a3b54;background:#1c1d32;color:#fff\">
-        <div style=\"display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px\">
-          <label style=\"font-weight:600;color:#a6e7ff\">Nova senha<input id=\"fpPass\" type=\"password\" style=\"margin-top:6px;width:100%;padding:10px;border-radius:8px;border:1px solid #3a3b54;background:#1c1d32;color:#fff\"></label>
-          <label style=\"font-weight:600;color:#a6e7ff\">Confirmar senha<input id=\"fpPass2\" type=\"password\" style=\"margin-top:6px;width:100%;padding:10px;border-radius:8px;border:1px solid #3a3b54;background:#1c1d32;color:#fff\"></label>
+      <div id="step1" class="fp-step">
+        <label class="fp-label">E-mail ou Telefone</label>
+        <input id="fpContact" class="fp-input" type="text" placeholder="voce@exemplo.com ou (19) 99999-9999">
+        <small class="fp-hint">Enviaremos um código de 6 dígitos que expira em 15 minutos.</small>
+        <div id="fpMessage1"></div>
+        <div class="fp-actions end"><button id="fpSend" class="btn-primary">Enviar código</button><button id="fpCancel1" class="btn-tertiary">Fechar</button></div>
+      </div>
+      <div id="step2" class="fp-step" style="display:none">
+        <div class="fp-step2-header">
+          <label class="fp-label">Código</label>
+          <button id="fpResend" class="btn-secondary fp-resend" disabled>Reenviar em 60s</button>
         </div>
-        <small id=\"fpHint\" style=\"display:block;margin-top:8px;color:#aeb7d0;opacity:.9\"></small>
-        <div id=\"fpMessage2\"></div>
-        <div style=\"display:flex;gap:10px;justify-content:space-between;margin-top:12px\"><button id=\"fpBack\" class=\"btn-secondary\">Voltar</button><div style=\"display:flex;gap:10px\"><button id=\"fpCancel2\" class=\"btn-secondary\">Cancelar</button><button id=\"fpResend\" class=\"btn-secondary\">Reenviar (0)</button><button id=\"fpReset\" class=\"btn-primary\">Redefinir</button></div></div>
+        <input id="fpCode" class="fp-input fp-code" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="6 dígitos">
+        <div class="fp-grid">
+          <label class="fp-label">Nova senha<input id="fpPass" class="fp-input" type="password"></label>
+          <label class="fp-label">Confirmar senha<input id="fpPass2" class="fp-input" type="password"></label>
+        </div>
+        <div id="fpMessage2"></div>
+        <div class="fp-actions between"><button id="fpBack" class="btn-secondary">Voltar</button><div class="fp-actions-right"><button id="fpReset" class="btn-primary">Redefinir Senha</button><button id="fpCancel2" class="btn-tertiary">Cancelar</button></div></div>
       </div>`;
     overlay.appendChild(card); document.body.appendChild(overlay);
 
-    const emailEl = card.querySelector('#fpEmail');
-    const phoneRow = card.querySelector('#phoneRow');
-    const phoneEl = card.querySelector('#fpPhone');
+    const contactEl = card.querySelector('#fpContact');
     const codeEl = card.querySelector('#fpCode');
     const passEl = card.querySelector('#fpPass');
     const pass2El = card.querySelector('#fpPass2');
-    const hintEl = card.querySelector('#fpHint');
     const step1 = card.querySelector('#step1');
     const step2 = card.querySelector('#step2');
     const btnSend = card.querySelector('#fpSend');
@@ -179,90 +172,109 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnBack = card.querySelector('#fpBack');
     const btnCancel1 = card.querySelector('#fpCancel1');
     const btnCancel2 = card.querySelector('#fpCancel2');
+    const btnCloseX = card.querySelector('#fpCloseX');
     const btnResend = card.querySelector('#fpResend');
     const msg1 = card.querySelector('#fpMessage1');
     const msg2 = card.querySelector('#fpMessage2');
 
+    let targetEmail = ''; // definido pela API após solicitar código (via email ou telefone)
+    let lastTTL = 0; let cooldownLeft = 60; let timer = null;
+    const COOLDOWN = 60; // segundos
+
     const showFP = (message, type, which=1) => {
       const host = which===1 ? msg1 : msg2;
-      host.innerHTML = `<div style=\"padding:8px 12px;margin:8px 0;border-radius:6px;background:${type==='error'?'rgba(244,67,54,0.1)':'rgba(76,175,80,0.1)'};color:${type==='error'?'#f44336':'#4caf50'};border:1px solid ${type==='error'?'rgba(244,67,54,0.3)':'rgba(76,175,80,0.3)'}\">${message}</div>`;
+      host.innerHTML = `<div class="fp-message ${type}">${message}</div>`;
     };
-
-    const close = () => { overlay.remove(); };
-    [btnCancel1, btnCancel2].forEach(b => b?.addEventListener('click', close));
+    const close = () => { if (timer) clearInterval(timer); overlay.remove(); };
+    ;[btnCancel1, btnCancel2, btnCloseX].forEach(b => b?.addEventListener('click', close));
     overlay.addEventListener('click', ev => { if (ev.target === overlay) close(); });
     document.addEventListener('keydown', function onEsc(ev){ if (ev.key==='Escape'){ close(); document.removeEventListener('keydown', onEsc); } });
 
-    if (prefillEmail) emailEl.value = prefillEmail;
-    card.querySelectorAll('input[name="fpMethod"]').forEach(r => r.addEventListener('change', () => {
-      const v = card.querySelector('input[name="fpMethod"]:checked')?.value || 'email';
-      phoneRow.style.display = v==='sms' ? 'block' : 'none';
-    }));
+    if (prefillContact) contactEl.value = prefillContact;
 
-    // Reenvio com cooldown
-    let resendCount = 0; let lastSent = 0; const COOLDOWN = 20*1000; const MAX_RESENDS = 5;
-    const updateResend = () => { if (!btnResend) return; btnResend.textContent = `Reenviar (${resendCount})`; btnResend.disabled = Date.now() - lastSent < COOLDOWN; };
+    const startCooldown = (ttl)=>{
+      cooldownLeft = Math.max(1, Math.min(COOLDOWN, Math.floor(ttl||COOLDOWN)));
+      btnResend.disabled = true;
+      btnResend.textContent = `Reenviar em ${cooldownLeft}s`;
+      if (timer) clearInterval(timer);
+      timer = setInterval(()=>{
+        cooldownLeft -= 1;
+        if (cooldownLeft <= 0) { clearInterval(timer); btnResend.disabled = false; btnResend.textContent = 'Reenviar código'; return; }
+        btnResend.textContent = `Reenviar em ${cooldownLeft}s`;
+      }, 1000);
+    };
+
+    const detect = (v)=> (/@/.test(v) ? { email: v.trim(), phone: '' } : { email: '', phone: v.trim() });
 
     btnSend.addEventListener('click', async () => {
-      const method = card.querySelector('input[name="fpMethod"]:checked')?.value || 'email';
-      const email = emailEl.value.trim(); const phone = phoneEl.value.trim();
-      if (!email) { showFP('Informe seu e-mail.', 'error', 1); emailEl.focus(); return; }
-      if (window.API_BASE) {
-        try {
-          const payload = { email }; if (method==='sms') payload.phone = phone;
-          const res = await fetch(window.API_BASE + '/auth/request_reset.php', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-          if (!res.ok) throw new Error(await res.text());
-          const j = await res.json(); hintEl.textContent = j.code ? `Código (demo): ${j.code}` : 'Código enviado. Verifique seu e-mail.';
-          showFP('Código enviado (verifique seu e-mail/SMS).', 'success', 1);
-          step1.style.display='none'; step2.style.display=''; lastSent=Date.now(); resendCount=0; updateResend(); setTimeout(()=>codeEl.focus(),0);
-        } catch { showFP('Erro ao solicitar recuperação.', 'error', 1); }
-        return;
+      const v = (contactEl.value||'').trim();
+      if (!v) { showFP('Informe e-mail ou telefone.', 'error', 1); contactEl.focus(); return; }
+      if (!window.API_BASE) { showFP('API indisponível. Tente novamente mais tarde.', 'error', 1); return; }
+      try {
+        btnSend.disabled = true; btnSend.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+        const payload = detect(v);
+        const res = await fetch(window.API_BASE + '/auth/request_reset.php', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+        const j = await res.json().catch(()=>({}));
+        if (!res.ok || !j.ok) throw new Error(j.error||'Falha ao enviar o código.');
+        targetEmail = j.email || '';
+        lastTTL = j.ttl || COOLDOWN;
+        if (j.dev_code) {
+          showFP(`Código de teste (dev): ${j.dev_code}`, 'success', 1);
+        } else {
+          showFP('Código enviado. Verifique seu e-mail ou SMS.', 'success', 1);
+        }
+        if (j.dev_code) { codeEl.value = String(j.dev_code); }
+        step1.style.display='none'; step2.style.display=''; startCooldown(lastTTL);
+        setTimeout(()=>codeEl.focus(),0);
+      } catch (err) {
+        showFP(err?.message||'Erro ao solicitar recuperação.', 'error', 1);
+      } finally {
+        btnSend.disabled = false; btnSend.textContent = 'Enviar código';
       }
-      // local
-      const users = getUsers();
-      if (method==='email') {
-        if (!users[email]) { showFP('E-mail não cadastrado.', 'error', 1); return; }
-        const code = genCode(); saveResetCode('email:'+email, { code, exp: Date.now()+10*60*1000, via:'email' }); hintEl.textContent = `Código (demo): ${code}`;
-        showFP('Código enviado (simulado).', 'success', 1);
-        step1.style.display='none'; step2.style.display=''; lastSent=Date.now(); resendCount=0; updateResend(); setTimeout(()=>codeEl.focus(),0);
-        return;
-      }
-      if (!phone) { showFP('Informe o número de telefone.', 'error', 1); phoneEl.focus(); return; }
-      let foundEmail = null; try { Object.keys(users).forEach(k => { if (users[k]?.phone && users[k].phone.replace(/\D/g,'') === phone.replace(/\D/g,'')) foundEmail = k; }); } catch {}
-      if (!foundEmail) { showFP('Telefone não encontrado.', 'error', 1); return; }
-      const code = genCode(); saveResetCode('sms:'+phone.replace(/\D/g,''), { code, exp: Date.now()+10*60*1000, via:'sms', email: foundEmail });
-      hintEl.textContent = `Código (demo): ${code}`; showFP('Código enviado por SMS (simulado).', 'success', 1);
-      emailEl.value = foundEmail; step1.style.display='none'; step2.style.display=''; lastSent=Date.now(); resendCount=0; updateResend(); setTimeout(()=>codeEl.focus(),0);
     });
 
-    btnResend?.addEventListener('click', () => {
-      if (Date.now()-lastSent < COOLDOWN) return; if (resendCount >= MAX_RESENDS) { showFP('Limite de reenvio atingido.', 'error', 1); return; }
-      const method = card.querySelector('input[name="fpMethod"]:checked')?.value || 'email';
-      const email = emailEl.value.trim(); const phone = phoneEl.value.trim(); if (!email) { showFP('Informe seu e-mail.', 'error', 1); return; }
-      const code = genCode(); if (method==='email') saveResetCode('email:'+email, { code, exp: Date.now()+10*60*1000, via:'email' }); else saveResetCode('sms:'+phone.replace(/\D/g,''), { code, exp: Date.now()+10*60*1000, via:'sms', email });
-      hintEl.textContent = `Código reenviado (demo): ${code}`; resendCount++; lastSent=Date.now(); updateResend(); showFP('Código reenviado (simulado).', 'success', 1);
+    btnResend?.addEventListener('click', async () => {
+      if (!window.API_BASE) return; // nada a fazer sem API
+      const v = (contactEl.value||'').trim(); if (!v) return;
+      try {
+        btnResend.disabled = true; btnResend.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Reenviando...';
+        const payload = detect(v);
+        const res = await fetch(window.API_BASE + '/auth/request_reset.php', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+        const j = await res.json().catch(()=>({}));
+        if (!res.ok || !j.ok) throw new Error(j.error||'Falha ao reenviar.');
+        targetEmail = j.email || targetEmail; lastTTL = j.ttl || COOLDOWN; startCooldown(lastTTL);
+        if (j.dev_code) {
+          showFP(`Novo código (dev): ${j.dev_code}`, 'success', 2);
+          codeEl.value = String(j.dev_code);
+        } else {
+          showFP('Novo código enviado. Verifique sua caixa de entrada.', 'success', 2);
+        }
+      } catch (err) {
+        showFP(err?.message||'Erro ao reenviar código.', 'error', 2);
+      } finally {
+        btnResend.innerHTML = 'Reenviar código'; btnResend.disabled = true; // será reabilitado pelo timer
+      }
     });
 
-    btnBack.addEventListener('click', () => { step2.style.display='none'; step1.style.display=''; msg2.innerHTML=''; });
-    btnReset.addEventListener('click', () => {
-      const method = card.querySelector('input[name="fpMethod"]:checked')?.value || 'email';
-      const email = emailEl.value.trim(); const phone = phoneEl.value.trim();
+    btnBack.addEventListener('click', () => { step2.style.display='none'; step1.style.display=''; msg2.innerHTML=''; if (timer) { clearInterval(timer); btnResend.textContent='Reenviar em 60s'; btnResend.disabled=true; }});
+    btnReset.addEventListener('click', async () => {
       const code = codeEl.value.trim(); const p1 = passEl.value.trim(); const p2 = pass2El.value.trim();
       if (!code) { showFP('Informe o código.', 'error', 2); codeEl.focus(); return; }
-      const rec = method==='email' ? getResetCode('email:'+email) : getResetCode('sms:'+phone.replace(/\D/g,''));
-      if (!rec) { showFP('Código expirado ou inválido. Envie novamente.', 'error', 2); return; }
-      if (Date.now() > rec.exp) { showFP('Código expirado. Envie novamente.', 'error', 2); return; }
-      if (code !== rec.code) { showFP('Código inválido.', 'error', 2); return; }
       if (!p1 || p1.length < 6) { showFP('A senha deve ter pelo menos 6 caracteres.', 'error', 2); passEl.focus(); return; }
       if (p1 !== p2) { showFP('As senhas não coincidem.', 'error', 2); pass2El.focus(); return; }
-      const targetEmail = method==='email' ? email : (rec.email || email);
-      const users = getUsers(); if (!users[targetEmail]) { showFP('Usuário não encontrado.', 'error', 2); return; }
-      users[targetEmail] = { ...(users[targetEmail]||{}), password: p1 }; setUsers(users);
-      const loginEmail = document.getElementById('loginEmail'); const loginPassword = document.getElementById('loginPassword');
-      if (loginEmail) loginEmail.value = targetEmail; if (loginPassword) loginPassword.value = p1;
-      document.querySelector('.auth-tab[data-tab="login"]')?.click();
-      showFP('Senha redefinida com sucesso! Faça login com sua nova senha.', 'success', 2);
-      setTimeout(() => { overlay.remove(); showMessage('Senha redefinida com sucesso! Faça login com sua nova senha.', 'success'); }, 1200);
+      if (!window.API_BASE) { showFP('API indisponível. Tente novamente mais tarde.', 'error', 2); return; }
+      try {
+        btnReset.disabled = true; btnReset.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Redefinindo...';
+        const res = await fetch(window.API_BASE + '/auth/reset_password.php', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email: targetEmail, code, password: p1 }) });
+        const j = await res.json().catch(()=>({})); if (!res.ok || !j.ok) throw new Error(j.error||'Falha ao redefinir senha.');
+        const loginEmail = document.getElementById('loginEmail'); const loginPassword = document.getElementById('loginPassword');
+        if (loginEmail && targetEmail) loginEmail.value = targetEmail; if (loginPassword) loginPassword.value = p1;
+        document.querySelector('.auth-tab[data-tab="login"]')?.click();
+        showFP('Senha redefinida com sucesso! Faça login com sua nova senha.', 'success', 2);
+        setTimeout(() => { close(); showMessage('Senha redefinida com sucesso! Faça login com sua nova senha.', 'success'); }, 1100);
+      } catch (err) {
+        showFP(err?.message||'Não foi possível redefinir a senha.', 'error', 2);
+      } finally { btnReset.disabled = false; btnReset.textContent = 'Redefinir'; }
     });
   }
 
@@ -275,9 +287,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const api = async (path, payload) => { const res = await fetch(API()+path, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload||{}) }); if (!res.ok) { let txt=''; try{txt=await res.text();}catch{} throw new Error(txt||res.statusText);} return res.json(); };
     const setLoggedIn = (u) => {
       const name = u.name || (u.email ? u.email.split('@')[0] : 'Usuário');
-  localStorage.setItem('userLoggedIn','true'); localStorage.setItem('userEmail', u.email); localStorage.setItem('userName', name);
-  try { const prev = localStorage.getItem('userCurrentAccess'); if (prev) localStorage.setItem('userLastAccess', prev); localStorage.setItem('userCurrentAccess', nowISO()); } catch {}
-      try { const users = getUsers(); users[u.email] = { ...(users[u.email]||{}), name, phone:u.phone, city:u.city, state:u.state }; setUsers(users); } catch {}
+      localStorage.setItem('userLoggedIn','true');
+      localStorage.setItem('userEmail', u.email);
+      localStorage.setItem('userName', name);
+      // Persistir role se fornecida pela API (login/register atualizados para retornar role)
+      if (u.role) {
+        try { localStorage.setItem('userRole', String(u.role).toLowerCase()); } catch {}
+      }
+      try {
+        const prev = localStorage.getItem('userCurrentAccess');
+        if (prev) localStorage.setItem('userLastAccess', prev);
+        localStorage.setItem('userCurrentAccess', nowISO());
+      } catch {}
+      try {
+        const users = getUsers();
+        users[u.email] = { ...(users[u.email]||{}), name, phone:u.phone, city:u.city, state:u.state };
+        setUsers(users);
+      } catch {}
     };
     const remoteRegister = async (name, email, password, phone) => { const payload = { name, email, password }; if (phone) payload.phone = phone; const { user } = await api('/auth/register.php', payload); setLoggedIn(user); return user; };
     const remoteLogin = async (email, password) => { const { user } = await api('/auth/login.php', { email, password }); setLoggedIn(user); return user; };
